@@ -327,6 +327,49 @@
             </div>
         </div>
 
+            <!-- PAGE: Settings -->
+            <div id="page-settings" class="page">
+                <div class="detail-header">
+                    <button class="btn-icon" onclick="showPage('home')">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h2>Settings</h2>
+                </div>
+
+                <div class="admin-section" style="padding: 0;">
+                    <div class="admin-card">
+                        <h3><i class="fas fa-database"></i> Data Management</h3>
+                        <button class="btn btn-danger btn-full" onclick="confirmClearData()">
+                            <i class="fas fa-trash"></i> Hapus Semua Data Satker
+                        </button>
+                        <button class="btn btn-info btn-full" onclick="exportFullBackup()">
+                            <i class="fas fa-download"></i> Backup JSON
+                        </button>
+                        <button class="btn btn-success btn-full" onclick="document.getElementById('restoreInput2').click()">
+                            <i class="fas fa-upload"></i> Restore JSON
+                        </button>
+                        <input type="file" id="restoreInput2" accept=".json" class="hidden" onchange="restoreBackup(event)">
+                    </div>
+
+                    <div class="admin-card">
+                        <h3><i class="fas fa-file-excel"></i> Export</h3>
+                        <button class="btn btn-success btn-full" onclick="exportExcel()">
+                            <i class="fas fa-file-excel"></i> Export ke Excel
+                        </button>
+                    </div>
+
+                    <div class="admin-card">
+                        <h3><i class="fas fa-info-circle"></i> Tentang</h3>
+                        <div class="about-info">
+                            <p><strong>Verifikasi Aset BMN</strong></p>
+                            <p class="text-muted">Versi 1.0</p>
+                            <p class="text-muted">Kementerian Agama RI</p>
+                            <p class="text-muted" style="margin-top: 12px; font-size: 0.8rem;">Aplikasi pencatatan dan verifikasi aset BMN untuk memudahkan proses pengawasan inventaris barang milik negara.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         <!-- Bottom Navigation -->
         <nav class="bottom-nav">
             <button class="nav-item active" onclick="showPage('home')" data-page="home">

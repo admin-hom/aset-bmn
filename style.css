@@ -1065,6 +1065,16 @@ body {
     gap: 12px;
 }
 
+/* ===== ABOUT INFO ===== */
+.about-info p {
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+
+.about-info p:first-child {
+    font-size: 1rem;
+}
+
 /* ===== UTILITIES ===== */
 .hidden {
     display: none !important;
