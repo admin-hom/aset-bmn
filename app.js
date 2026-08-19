@@ -1,0 +1,696 @@
+// ===== APP STATE =====
+let currentSatker = null;
+let currentAssets = []; // Assets for current satker
+let allAssets = {}; // All assets grouped by satker
+let verifications = {}; // Verifications grouped by satker
+let currentAsset = null;
+let currentPhoto = null;
+
+const SATKER_MAP = {
+    sekretariat: 'Sekretariat Jendral',
+    pendidikan: 'Pendidikan Islam',
+    bimas: 'Bimbingan Masyarakat Islam'
+};
+
+// ===== INITIALIZE =====
+document.addEventListener('DOMContentLoaded', () => {
+    loadData();
+    setupDragDrop();
+    setupFormListeners();
+});
+
+// ===== DATA MANAGEMENT =====
+function loadData() {
+    try {
+        allAssets = JSON.parse(localStorage.getItem('allAssets')) || { sekretariat: [], pendidikan: [], bimas: [] };
+        verifications = JSON.parse(localStorage.getItem('verifications')) || { sekretariat: [], pendidikan: [], bimas: [] };
+    } catch (e) {
+        allAssets = { sekretariat: [], pendidikan: [], bimas: [] };
+        verifications = { sekretariat: [], pendidikan: [], bimas: [] };
+    }
+}
+
+function saveData() {
+    localStorage.setItem('allAssets', JSON.stringify(allAssets));
+    localStorage.setItem('verifications', JSON.stringify(verifications));
+}
+
+// ===== SATKER SELECTION =====
+function selectSatker(satker) {
+    currentSatker = satker;
+    currentAssets = allAssets[satker] || [];
+    document.getElementById('headerSatkerName').textContent = SATKER_MAP[satker];
+    showPage('home');
+    updateStats();
+    renderRecentList();
+}
+
+function goBack() {
+    showPage('satker');
+}
+
+// ===== NAVIGATION =====
+function showPage(page) {
+    // Hide all screens
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+
+    if (page === 'satker' || page === 'admin') {
+        document.getElementById(`screen-${page}`).classList.add('active');
+        if (page === 'admin') {
+            document.getElementById('screen-admin').classList.add('active');
+        } else {
+            document.getElementById('screen-satker').classList.add('active');
+        }
+    } else {
+        document.getElementById('screen-app').classList.add('active');
+        // Hide all pages
+        document.querySelectorAll('.pages-container .page').forEach(p => p.classList.remove('active'));
+        // Show target page
+        const targetPage = document.getElementById(`page-${page}`);
+        if (targetPage) targetPage.classList.add('active');
+
+        // Update bottom nav
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        const navItem = document.querySelector(`.nav-item[data-page="${page}"]`);
+        if (navItem) navItem.classList.add('active');
+    }
+}
+
+// ===== SEARCH ASSET =====
+function searchAsset() {
+    const kodeBarang = document.getElementById('inputKodeBarang').value.trim();
+    const nup = document.getElementById('inputNUP').value.trim();
+
+    if (!kodeBarang || !nup) {
+        showToast('Masukkan Kode Barang dan NUP!', 'error');
+        return;
+    }
+
+    // Find asset
+    const asset = currentAssets.find(a =>
+        a.kodeBarang === kodeBarang && a.nup === nup
+    );
+
+    if (!asset) {
+        showToast('Aset tidak ditemukan! Import data SIMAN dulu.', 'error');
+        return;
+    }
+
+    currentAsset = asset;
+    renderAssetDetail(asset);
+    showPage('detail');
+}
+
+function renderAssetDetail(asset) {
+    const container = document.getElementById('assetDetail');
+    const statusClass = asset.statusBMN === 'Aktif' ? 'aktif' : 'tidak-aktif';
+
+    // Find existing verification
+    const existingVerification = (verifications[currentSatker] || []).find(v =>
+        v.kodeBarang === asset.kodeBarang && v.nup === asset.nup
+    );
+
+    container.innerHTML = `
+        <span class="asset-badge ${statusClass}">${asset.statusBMN || 'Aktif'}</span>
+        <h3>${escapeHtml(asset.namaBarang || 'Tanpa Nama')}</h3>
+        <p class="asset-subtitle">${escapeHtml(asset.merk || '')} ${escapeHtml(asset.tipe || '')}</p>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="di-label">Kode Barang</span>
+                <span class="di-value">${escapeHtml(asset.kodeBarang || '-')}</span>
+            </div>
+            <div class="detail-item">
+                <span class="di-label">NUP</span>
+                <span class="di-value">${escapeHtml(asset.nup || '-')}</span>
+            </div>
+            <div class="detail-item">
+                <span class="di-label">Kondisi</span>
+                <span class="di-value">${escapeHtml(asset.kondisi || '-')}</span>
+            </div>
+            <div class="detail-item">
+                <span class="di-label">Nilai Buku</span>
+                <span class="di-value">Rp ${formatNumber(asset.nilaiBuku || 0)}</span>
+            </div>
+            <div class="detail-item full-width">
+                <span class="di-label">Jenis BMN</span>
+                <span class="di-value">${escapeHtml(asset.jenisBMN || '-')}</span>
+            </div>
+        </div>
+        ${existingVerification ? `
+            <div style="margin-top: 16px; padding: 12px; background: var(--success-light); border-radius: 8px; border: 1px solid var(--success);">
+                <strong style="color: #065f46; font-size: 0.85rem;">
+                    <i class="fas fa-check-circle"></i> Sudah Diverifikasi
+                </strong>
+                <p style="font-size: 0.8rem; color: #065f46; margin-top: 4px;">
+                    Lokasi: ${escapeHtml(existingVerification.lokasi || '-')} | 
+                    Kondisi: ${escapeHtml(existingVerification.kondisiAktual || '-')}
+                </p>
+            </div>
+        ` : ''}
+    `;
+
+    // Pre-fill form if verification exists
+    if (existingVerification) {
+        document.getElementById('inputLokasi').value = existingVerification.lokasi || '';
+        const kondisiRadio = document.querySelector(`input[name="kondisi"][value="${existingVerification.kondisiAktual}"]`);
+        if (kondisiRadio) kondisiRadio.checked = true;
+        document.getElementById('inputCatatan').value = existingVerification.catatan || '';
+        if (existingVerification.foto) {
+            showPhotoPreview(existingVerification.foto);
+        }
+    } else {
+        // Reset form
+        document.getElementById('inputLokasi').value = '';
+        document.querySelectorAll('input[name="kondisi"]').forEach(r => r.checked = false);
+        document.getElementById('inputCatatan').value = '';
+        resetPhoto();
+    }
+
+    // Update location autocomplete
+    updateLocationAutocomplete();
+}
+
+// ===== SAVE VERIFICATION =====
+function saveVerification() {
+    if (!currentAsset) return;
+
+    const lokasi = document.getElementById('inputLokasi').value.trim();
+    const kondisi = document.querySelector('input[name="kondisi"]:checked')?.value;
+    const catatan = document.getElementById('inputCatatan').value.trim();
+
+    if (!lokasi) {
+        showToast('Masukkan lokasi ruangan!', 'error');
+        return;
+    }
+
+    if (!kondisi) {
+        showToast('Pilih kondisi aset!', 'error');
+        return;
+    }
+
+    const verification = {
+        id: Date.now(),
+        kodeBarang: currentAsset.kodeBarang,
+        nup: currentAsset.nup,
+        namaBarang: currentAsset.namaBarang,
+        merk: currentAsset.merk,
+        tipe: currentAsset.tipe,
+        kondisiSiman: currentAsset.kondisi,
+        kondisiAktual: kondisi,
+        lokasi: lokasi,
+        foto: currentPhoto,
+        catatan: catatan,
+        tanggalVerifikasi: new Date().toISOString(),
+        satker: currentSatker
+    };
+
+    // Remove existing verification for this asset
+    verifications[currentSatker] = (verifications[currentSatker] || []).filter(v =>
+        !(v.kodeBarang === currentAsset.kodeBarang && v.nup === currentAsset.nup)
+    );
+
+    // Add new verification
+    verifications[currentSatker].unshift(verification);
+
+    saveData();
+    updateStats();
+    renderRecentList();
+
+    showSuccessModal('Verifikasi berhasil disimpan!');
+}
+
+// ===== UPDATE STATS =====
+function updateStats() {
+    const total = currentAssets.length;
+    const verified = verifications[currentSatker]?.length || 0;
+    const unverified = total - verified;
+
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statVerified').textContent = verified;
+    document.getElementById('statUnverified').textContent = unverified > 0 ? unverified : 0;
+
+    // Dashboard stats
+    const dashTotal = document.getElementById('dashTotal');
+    const dashVerified = document.getElementById('dashVerified');
+    const dashUnverified = document.getElementById('dashUnverified');
+    const dashProblem = document.getElementById('dashProblem');
+
+    if (dashTotal) dashTotal.textContent = total;
+    if (dashVerified) dashVerified.textContent = verified;
+    if (dashUnverified) dashUnverified.textContent = unverified > 0 ? unverified : 0;
+
+    // Count problem assets (rusak)
+    const problemCount = verifications[currentSatker]?.filter(v =>
+        v.kondisiAktual === 'Rusak Ringan' || v.kondisiAktual === 'Rusak Berat'
+    ).length || 0;
+    if (dashProblem) dashProblem.textContent = problemCount;
+
+    // Progress bar
+    const progressPercent = total > 0 ? Math.round((verified / total) * 100) : 0;
+    const progressFill = document.getElementById('progressFill');
+    const progressPercentText = document.getElementById('progressPercent');
+    if (progressFill) progressFill.style.width = `${progressPercent}%`;
+    if (progressPercentText) progressPercentText.textContent = `${progressPercent}%`;
+
+    // Kondisi stats
+    renderKondisiStats();
+}
+
+function renderKondisiStats() {
+    const container = document.getElementById('kondisiStats');
+    if (!container) return;
+
+    const verifs = verifications[currentSatker] || [];
+    const baik = verifs.filter(v => v.kondisiAktual === 'Baik').length;
+    const rusakRingan = verifs.filter(v => v.kondisiAktual === 'Rusak Ringan').length;
+    const rusakBerat = verifs.filter(v => v.kondisiAktual === 'Rusak Berat').length;
+    const belum = currentAssets.length - verifs.length;
+
+    container.innerHTML = `
+        <div class="kondisi-item">
+            <span class="ki-label"><span class="ki-dot baik"></span> Baik</span>
+            <span class="ki-count">${baik}</span>
+        </div>
+        <div class="kondisi-item">
+            <span class="ki-label"><span class="ki-dot rusak-ringan"></span> Rusak Ringan</span>
+            <span class="ki-count">${rusakRingan}</span>
+        </div>
+        <div class="kondisi-item">
+            <span class="ki-label"><span class="ki-dot rusak-berat"></span> Rusak Berat</span>
+            <span class="ki-count">${rusakBerat}</span>
+        </div>
+        <div class="kondisi-item">
+            <span class="ki-label"><span class="ki-dot belum"></span> Belum Diverifikasi</span>
+            <span class="ki-count">${belum > 0 ? belum : 0}</span>
+        </div>
+    `;
+}
+
+// ===== RENDER RECENT LIST =====
+function renderRecentList() {
+    const container = document.getElementById('recentList');
+    const verifs = verifications[currentSatker] || [];
+
+    if (verifs.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state-small">
+                <i class="fas fa-inbox"></i>
+                <p>Belum ada verifikasi</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Show last 5
+    const recent = verifs.slice(0, 5);
+    container.innerHTML = recent.map(v => {
+        let iconClass = 'good';
+        let icon = 'fa-check-circle';
+        if (v.kondisiAktual === 'Rusak Ringan') { iconClass = 'warning'; icon = 'fa-exclamation-circle'; }
+        if (v.kondisiAktual === 'Rusak Berat') { iconClass = 'danger'; icon = 'fa-times-circle'; }
+
+        const time = new Date(v.tanggalVerifikasi);
+        const timeStr = time.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) + ' ' +
+                       time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+        return `
+            <div class="recent-item">
+                <div class="ri-icon ${iconClass}">
+                    <i class="fas ${icon}"></i>
+                </div>
+                <div class="ri-info">
+                    <div class="ri-name">${escapeHtml(v.namaBarang || 'Tanpa Nama')}</div>
+                    <div class="ri-detail">NUP: ${escapeHtml(v.nup)} | ${escapeHtml(v.lokasi || '-')}</div>
+                </div>
+                <span class="ri-time">${timeStr}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+// ===== LOCATION AUTOCOMPLETE =====
+function updateLocationAutocomplete() {
+    const datalist = document.getElementById('lokasiHistory');
+    const allLocations = (verifications[currentSatker] || [])
+        .map(v => v.lokasi)
+        .filter(l => l && l.trim())
+        .filter((v, i, a) => a.indexOf(v) === i) // unique
+        .sort();
+
+    datalist.innerHTML = allLocations.map(l => `<option value="${escapeHtml(l)}">`).join('');
+}
+
+// ===== PHOTO HANDLING =====
+function triggerCamera() {
+    document.getElementById('inputFoto').click();
+}
+
+function handlePhoto(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        currentPhoto = e.target.result;
+        showPhotoPreview(currentPhoto);
+    };
+    reader.readAsDataURL(file);
+}
+
+function showPhotoPreview(src) {
+    const preview = document.getElementById('photoPreview');
+    const actions = document.getElementById('photoActions');
+    preview.innerHTML = `<img src="${src}" alt="Foto Aset">`;
+    preview.onclick = null;
+    actions.classList.remove('hidden');
+}
+
+function removePhoto() {
+    currentPhoto = null;
+    resetPhoto();
+}
+
+function resetPhoto() {
+    const preview = document.getElementById('photoPreview');
+    const actions = document.getElementById('photoActions');
+    preview.innerHTML = `
+        <i class="fas fa-camera"></i>
+        <span>Ketik untuk ambil foto</span>
+    `;
+    preview.onclick = triggerCamera;
+    actions.classList.add('hidden');
+    document.getElementById('inputFoto').value = '';
+}
+
+// ===== EXCEL IMPORT =====
+function setupDragDrop() {
+    const dropzone = document.getElementById('dropzone');
+    if (!dropzone) return;
+
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = 'var(--primary)';
+        dropzone.style.background = 'var(--primary-light)';
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.style.borderColor = '';
+        dropzone.style.background = '';
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '';
+        dropzone.style.background = '';
+        const file = e.dataTransfer.files[0];
+        if (file) processExcelFile(file);
+    });
+}
+
+function handleFileImport(event) {
+    const file = event.target.files[0];
+    if (file) processExcelFile(file);
+}
+
+function processExcelFile(file) {
+    if (!file.name.match(/\.xlsx?$/i)) {
+        showToast('File harus berformat .xlsx atau .xls!', 'error');
+        return;
+    }
+
+    showImportProgress(true, 'Membaca file Excel...');
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+
+            if (jsonData.length === 0) {
+                showImportProgress(false);
+                showToast('File Excel kosong!', 'error');
+                return;
+            }
+
+            showImportProgress(true, `Memproses ${jsonData.length} data...`);
+
+            // Map columns
+            let imported = 0;
+            const newAssets = [];
+
+            jsonData.forEach((row, i) => {
+                // Try to find column names (flexible mapping)
+                const kodeBarang = findColumnValue(row, ['Kode Barang', 'kode_barang', 'kodeBarang', 'KodeBarang']);
+                const nup = findColumnValue(row, ['NUP', 'nup', 'Nup']);
+                const namaBarang = findColumnValue(row, ['Nama Barang', 'nama_barang', 'namaBarang', 'NamaBarang', 'Nama']);
+                const merk = findColumnValue(row, ['Merk', 'merk', 'MERK']);
+                const tipe = findColumnValue(row, ['Tipe', 'tipe', 'TIPE', 'Spesifikasi', 'spek']);
+                const kondisi = findColumnValue(row, ['Kondisi', 'kondisi', 'KONDISI']);
+                const nilaiBuku = findColumnValue(row, ['Nilai Buku', 'nilai_buku', 'nilaiBuku', 'NilaiBuku']);
+                const statusBMN = findColumnValue(row, ['Status BMN', 'status_bmn', 'statusBMN', 'StatusBMN', 'Status']);
+                const jenisBMN = findColumnValue(row, ['Jenis BMN', 'jenis_bmn', 'jenisBMN', 'JenisBMN', 'Jenis']);
+                const umurAset = findColumnValue(row, ['Umur Aset', 'umur_asset', 'umurAset', 'UmurAset', 'Umur']);
+
+                if (!kodeBarang || !nup) return; // Skip rows without key data
+
+                newAssets.push({
+                    id: Date.now() + i,
+                    kodeBarang: String(kodeBarang).trim(),
+                    nup: String(nup).trim(),
+                    namaBarang: String(namaBarang || '-').trim(),
+                    merk: String(merk || '').trim(),
+                    tipe: String(tipe || '').trim(),
+                    kondisi: String(kondisi || '-').trim(),
+                    nilaiBuku: parseNumber(nilaiBuku),
+                    statusBMN: String(statusBMN || 'Aktif').trim(),
+                    jenisBMN: String(jenisBMN || '-').trim(),
+                    umurAset: String(umurAset || '-').trim()
+                });
+                imported++;
+            });
+
+            // Add to current satker
+            allAssets[currentSatker] = [...allAssets[currentSatker], ...newAssets];
+            currentAssets = allAssets[currentSatker];
+            saveData();
+            updateStats();
+            renderRecentList();
+
+            showImportProgress(false);
+            showToast(`${imported} aset berhasil diimport!`, 'success');
+
+            // Clear input
+            document.getElementById('fileInput').value = '';
+
+        } catch (err) {
+            showImportProgress(false);
+            showToast(`Gagal import: ${err.message}`, 'error');
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function findColumnValue(row, possibleNames) {
+    for (const name of possibleNames) {
+        if (row[name] !== undefined && row[name] !== '') {
+            return row[name];
+        }
+    }
+    // Try case-insensitive
+    const keys = Object.keys(row);
+    for (const name of possibleNames) {
+        const found = keys.find(k => k.toLowerCase() === name.toLowerCase());
+        if (found && row[found] !== '') {
+            return row[found];
+        }
+    }
+    return null;
+}
+
+function parseNumber(val) {
+    if (typeof val === 'number') return val;
+    if (!val) return 0;
+    return parseInt(String(val).replace(/[^\d]/g, '')) || 0;
+}
+
+function showImportProgress(show, message) {
+    const el = document.getElementById('importProgress');
+    const status = document.getElementById('importStatus');
+    const fill = document.getElementById('importProgressFill');
+
+    if (show) {
+        el.classList.remove('hidden');
+        status.textContent = message || 'Memproses...';
+        fill.style.width = '70%';
+    } else {
+        fill.style.width = '100%';
+        setTimeout(() => {
+            el.classList.add('hidden');
+            fill.style.width = '0%';
+        }, 500);
+    }
+}
+
+// ===== EXPORT EXCEL =====
+function exportExcel() {
+    const verifs = verifications[currentSatker] || [];
+
+    if (currentAssets.length === 0 && verifs.length === 0) {
+        showToast('Tidak ada data untuk diexport!', 'error');
+        return;
+    }
+
+    // Merge data
+    const exportData = currentAssets.map(asset => {
+        const verification = verifs.find(v => v.kodeBarang === asset.kodeBarang && v.nup === asset.nup);
+        return {
+            'Kode Barang': asset.kodeBarang || '',
+            'NUP': asset.nup || '',
+            'Nama Barang': asset.namaBarang || '',
+            'Merk': asset.merk || '',
+            'Tipe': asset.tipe || '',
+            'Jenis BMN': asset.jenisBMN || '',
+            'Kondisi (SIMAN)': asset.kondisi || '',
+            'Status BMN': asset.statusBMN || '',
+            'Nilai Buku': asset.nilaiBuku || 0,
+            'Umur Aset': asset.umurAset || '',
+            'Status Verifikasi': verification ? 'Sudah' : 'Belum',
+            'Lokasi Aktual': verification?.lokasi || '',
+            'Kondisi Aktual': verification?.kondisiAktual || '',
+            'Catatan': verification?.catatan || '',
+            'Tanggal Verifikasi': verification?.tanggalVerifikasi ?
+                new Date(verification.tanggalVerifikasi).toLocaleDateString('id-ID') : ''
+        };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Verifikasi Aset');
+
+    const satkerName = SATKER_MAP[currentSatker].replace(/\s+/g, '_');
+    const date = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb, `Verifikasi_Aset_${satkerName}_${date}.xlsx`);
+
+    showToast('Excel berhasil diexport!', 'success');
+}
+
+// ===== ADMIN =====
+function confirmClearData() {
+    document.getElementById('modalTitle').textContent = 'Hapus Semua Data?';
+    document.getElementById('modalMessage').textContent = 'Semua data aset dan verifikasi untuk satker ini akan dihapus. Tindakan ini tidak dapat dibatalkan.';
+    document.getElementById('modalConfirm').onclick = () => {
+        allAssets[currentSatker] = [];
+        verifications[currentSatker] = [];
+        currentAssets = [];
+        saveData();
+        updateStats();
+        renderRecentList();
+        closeModal();
+        showToast('Semua data berhasil dihapus!', 'info');
+    };
+    document.getElementById('confirmModal').classList.add('show');
+}
+
+function exportFullBackup() {
+    const backup = {
+        allAssets,
+        verifications,
+        exportDate: new Date().toISOString()
+    };
+    const data = JSON.stringify(backup, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `backup_aset_${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast('Backup berhasil diunduh!', 'success');
+}
+
+function restoreBackup(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const backup = JSON.parse(e.target.result);
+            if (backup.allAssets && backup.verifications) {
+                allAssets = backup.allAssets;
+                verifications = backup.verifications;
+                saveData();
+                showToast('Backup berhasil direstore!', 'success');
+            } else {
+                showToast('Format file tidak valid!', 'error');
+            }
+        } catch (err) {
+            showToast('Gagal membaca file!', 'error');
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+}
+
+// ===== MODAL =====
+function closeModal() {
+    document.getElementById('confirmModal').classList.remove('show');
+}
+
+function showSuccessModal(message) {
+    document.getElementById('successMessage').textContent = message;
+    document.getElementById('successModal').classList.add('show');
+}
+
+function closeSuccessModal() {
+    document.getElementById('successModal').classList.remove('show');
+    showPage('home');
+}
+
+// ===== TOAST =====
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('toast');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    toast.classList.add('show');
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+// ===== HELPERS =====
+function escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function formatNumber(num) {
+    return new Intl.NumberFormat('id-ID').format(num || 0);
+}
+
+function setupFormListeners() {
+    // Enter key on search inputs
+    const inputNUP = document.getElementById('inputNUP');
+    if (inputNUP) {
+        inputNUP.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchAsset();
+            }
+        });
+    }
+}
+
+// ===== SERVICE WORKER =====
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {
+            // SW not available
+        });
+    });
+}

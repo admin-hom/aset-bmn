@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1e293b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Verifikasi Aset BMN</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+    <!-- ===== SCREEN 1: PILIH SATKER ===== -->
+    <section id="screen-satker" class="screen active">
+        <div class="satker-container">
+            <div class="satker-header">
+                <div class="satker-logo">
+                    <i class="fas fa-building-columns"></i>
+                </div>
+                <h1>Verifikasi Aset BMN</h1>
+                <p class="satker-subtitle">Kementerian Agama RI</p>
+                <p class="satker-desc">Pilih bagian satker untuk memulai</p>
+            </div>
+            <div class="satker-list">
+                <button class="satker-card" onclick="selectSatker('sekretariat')">
+                    <div class="satker-icon"><i class="fas fa-landmark"></i></div>
+                    <div class="satker-info">
+                        <h3>Sekretariat Jendral</h3>
+                        <p>Verifikasi aset Sekretariat Jenderal</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                <button class="satker-card" onclick="selectSatker('pendidikan')">
+                    <div class="satker-icon"><i class="fas fa-graduation-cap"></i></div>
+                    <div class="satker-info">
+                        <h3>Pendidikan Islam</h3>
+                        <p>Verifikasi aset Pendidikan Islam</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                <button class="satker-card" onclick="selectSatker('bimas')">
+                    <div class="satker-icon"><i class="fas fa-mosque"></i></div>
+                    <div class="satker-info">
+                        <h3>Bimbingan Masyarakat Islam</h3>
+                        <p>Verifikasi aset Bimas Islam</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            <div class="satker-footer">
+                <button class="btn btn-outline" onclick="showPage('admin')">
+                    <i class="fas fa-cog"></i> Admin
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== SCREEN 2: MAIN APP ===== -->
+    <section id="screen-app" class="screen">
+        <!-- Top Bar -->
+        <header class="app-header">
+            <button class="btn-icon" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="header-title">
+                <span id="headerSatkerName">Sekretariat Jendral</span>
+            </div>
+            <button class="btn-icon" onclick="showPage('dashboard')">
+                <i class="fas fa-chart-pie"></i>
+            </button>
+        </header>
+
+        <!-- Pages Container -->
+        <div class="pages-container">
+
+            <!-- PAGE: Cari Aset (Home) -->
+            <div id="page-home" class="page active">
+                <div class="search-section">
+                    <h2>Cari Aset</h2>
+                    <p class="text-muted">Masukkan Kode Barang dan NUP untuk mencari aset</p>
+
+                    <div class="input-group">
+                        <label><i class="fas fa-barcode"></i> Kode Barang</label>
+                        <input type="text" id="inputKodeBarang" placeholder="Contoh: 3050104001" inputmode="numeric">
+                    </div>
+
+                    <div class="input-group">
+                        <label><i class="fas fa-hashtag"></i> NUP</label>
+                        <div class="input-with-btn">
+                            <input type="text" id="inputNUP" placeholder="Contoh: 6" inputmode="numeric">
+                            <button class="btn btn-primary btn-search" onclick="searchAsset()">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary btn-full" onclick="searchAsset()">
+                        <i class="fas fa-search"></i> Cari Aset
+                    </button>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="quick-stats">
+                    <div class="quick-stat">
+                        <span class="stat-num" id="statTotal">0</span>
+                        <span class="stat-label">Total</span>
+                    </div>
+                    <div class="quick-stat verified">
+                        <span class="stat-num" id="statVerified">0</span>
+                        <span class="stat-label">Terverifikasi</span>
+                    </div>
+                    <div class="quick-stat unverified">
+                        <span class="stat-num" id="statUnverified">0</span>
+                        <span class="stat-label">Belum</span>
+                    </div>
+                </div>
+
+                <!-- Recent Verifications -->
+                <div class="recent-section">
+                    <h3><i class="fas fa-clock"></i> Verifikasi Terakhir</h3>
+                    <div id="recentList" class="recent-list">
+                        <div class="empty-state-small">
+                            <i class="fas fa-inbox"></i>
+                            <p>Belum ada verifikasi</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE: Detail Aset -->
+            <div id="page-detail" class="page">
+                <div class="detail-header">
+                    <button class="btn-icon" onclick="showPage('home')">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h2>Detail Aset</h2>
+                </div>
+
+                <div id="assetDetail" class="asset-detail-card">
+                    <!-- Will be filled by JS -->
+                </div>
+
+                <!-- Form Verifikasi -->
+                <div id="verifyForm" class="verify-form">
+                    <h3><i class="fas fa-clipboard-check"></i> Form Verifikasi</h3>
+
+                    <div class="input-group">
+                        <label><i class="fas fa-map-marker-alt"></i> Lokasi Ruangan *</label>
+                        <input type="text" id="inputLokasi" placeholder="Contoh: Lt.2 R.201" list="lokasiHistory" autocomplete="off">
+                        <datalist id="lokasiHistory"></datalist>
+                        <small class="text-muted">Ketik untuk melihat rekomendasi lokasi sebelumnya</small>
+                    </div>
+
+                    <div class="input-group">
+                        <label><i class="fas fa-heartbeat"></i> Kondisi Aktual *</label>
+                        <div class="radio-group">
+                            <label class="radio-card">
+                                <input type="radio" name="kondisi" value="Baik">
+                                <div class="radio-content good">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>Baik</span>
+                                </div>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="kondisi" value="Rusak Ringan">
+                                <div class="radio-content warning">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    <span>Rusak Ringan</span>
+                                </div>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="kondisi" value="Rusak Berat">
+                                <div class="radio-content danger">
+                                    <i class="fas fa-times-circle"></i>
+                                    <span>Rusak Berat</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label><i class="fas fa-camera"></i> Foto Aset</label>
+                        <div class="photo-section">
+                            <div id="photoPreview" class="photo-preview" onclick="triggerCamera()">
+                                <i class="fas fa-camera"></i>
+                                <span>Ketik untuk ambil foto</span>
+                            </div>
+                            <input type="file" id="inputFoto" accept="image/*" capture="environment" class="hidden" onchange="handlePhoto(event)">
+                            <div id="photoActions" class="photo-actions hidden">
+                                <button type="button" class="btn btn-sm btn-danger" onclick="removePhoto()">
+                                    <i class="fas fa-trash"></i> Hapus
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label><i class="fas fa-sticky-note"></i> Catatan</label>
+                        <textarea id="inputCatatan" rows="3" placeholder="Catatan tambahan (opsional)"></textarea>
+                    </div>
+
+                    <button class="btn btn-success btn-full" onclick="saveVerification()">
+                        <i class="fas fa-save"></i> Simpan Verifikasi
+                    </button>
+                </div>
+            </div>
+
+            <!-- PAGE: Dashboard -->
+            <div id="page-dashboard" class="page">
+                <div class="detail-header">
+                    <button class="btn-icon" onclick="showPage('home')">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h2>Dashboard</h2>
+                </div>
+
+                <div class="dashboard-stats">
+                    <div class="dash-stat-card blue">
+                        <i class="fas fa-boxes-stacked"></i>
+                        <div>
+                            <span class="dash-num" id="dashTotal">0</span>
+                            <span class="dash-label">Total Aset</span>
+                        </div>
+                    </div>
+                    <div class="dash-stat-card green">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <span class="dash-num" id="dashVerified">0</span>
+                            <span class="dash-label">Terverifikasi</span>
+                        </div>
+                    </div>
+                    <div class="dash-stat-card orange">
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <span class="dash-num" id="dashUnverified">0</span>
+                            <span class="dash-label">Belum Diverifikasi</span>
+                        </div>
+                    </div>
+                    <div class="dash-stat-card red">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div>
+                            <span class="dash-num" id="dashProblem">0</span>
+                            <span class="dash-label">Rusak/Bermasalah</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="progress-section">
+                    <div class="progress-header">
+                        <span>Progress Verifikasi</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- List per Kondisi -->
+                <div class="dash-section">
+                    <h3><i class="fas fa-heartbeat"></i> Berdasarkan Kondisi</h3>
+                    <div id="kondisiStats" class="kondisi-stats"></div>
+                </div>
+
+                <!-- Export -->
+                <div class="dash-section">
+                    <h3><i class="fas fa-download"></i> Export Data</h3>
+                    <button class="btn btn-success btn-full" onclick="exportExcel()">
+                        <i class="fas fa-file-excel"></i> Export ke Excel (Semua Data)
+                    </button>
+                </div>
+            </div>
+
+            <!-- PAGE: Import Excel -->
+            <div id="page-import" class="page">
+                <div class="detail-header">
+                    <button class="btn-icon" onclick="showPage('home')">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h2>Import Data SIMAN</h2>
+                </div>
+
+                <div class="import-section">
+                    <div class="import-info">
+                        <i class="fas fa-info-circle"></i>
+                        <div>
+                            <strong>Import dari SIMAN Kemenkeu</strong>
+                            <p>Upload file Excel (.xlsx) export dari SIMAN. Pastikan kolom yang diperlukan tersedia.</p>
+                        </div>
+                    </div>
+
+                    <div class="required-columns">
+                        <h4>Kolom yang Diperlukan:</h4>
+                        <div class="column-tags">
+                            <span class="tag">Kode Barang</span>
+                            <span class="tag">NUP</span>
+                            <span class="tag">Nama Barang</span>
+                            <span class="tag">Merk</span>
+                            <span class="tag">Tipe</span>
+                            <span class="tag">Kondisi</span>
+                            <span class="tag">Nilai Buku</span>
+                            <span class="tag">Status BMN</span>
+                        </div>
+                    </div>
+
+                    <div class="import-dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Ketik untuk memilih file Excel</p>
+                        <span>atau drag & drop file ke sini</span>
+                        <input type="file" id="fileInput" accept=".xlsx,.xls" class="hidden" onchange="handleFileImport(event)">
+                    </div>
+
+                    <div id="importProgress" class="import-progress hidden">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="importProgressFill"></div>
+                        </div>
+                        <p id="importStatus">Memproses...</p>
+                    </div>
+
+                    <button class="btn btn-primary btn-full" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-file-excel"></i> Pilih File Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="showPage('home')" data-page="home">
+                <i class="fas fa-home"></i>
+                <span>Beranda</span>
+            </button>
+            <button class="nav-item" onclick="showPage('import')" data-page="import">
+                <i class="fas fa-file-import"></i>
+                <span>Import</span>
+            </button>
+            <button class="nav-item" onclick="showPage('dashboard')" data-page="dashboard">
+                <i class="fas fa-chart-pie"></i>
+                <span>Dashboard</span>
+            </button>
+            <button class="nav-item" onclick="showPage('settings')" data-page="settings">
+                <i class="fas fa-cog"></i>
+                <span>Setting</span>
+            </button>
+        </nav>
+    </section>
+
+    <!-- PAGE: Admin Settings (standalone) -->
+    <section id="screen-admin" class="screen">
+        <div class="detail-header">
+            <button class="btn-icon" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h2>Admin</h2>
+        </div>
+        <div class="admin-section">
+            <div class="admin-card">
+                <h3><i class="fas fa-database"></i> Data Management</h3>
+                <button class="btn btn-danger btn-full" onclick="confirmClearData()">
+                    <i class="fas fa-trash"></i> Hapus Semua Data
+                </button>
+                <button class="btn btn-info btn-full" onclick="exportFullBackup()">
+                    <i class="fas fa-download"></i> Backup JSON
+                </button>
+                <button class="btn btn-success btn-full" onclick="document.getElementById('restoreInput').click()">
+                    <i class="fas fa-upload"></i> Restore JSON
+                </button>
+                <input type="file" id="restoreInput" accept=".json" class="hidden" onchange="restoreBackup(event)">
+            </div>
+
+            <div class="admin-card">
+                <h3><i class="fas fa-info-circle"></i> Tentang</h3>
+                <p class="text-muted">Verifikasi Aset BMN v1.0</p>
+                <p class="text-muted">Kementerian Agama RI</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Confirm Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h2 id="modalTitle">Konfirmasi</h2>
+            <p id="modalMessage">Apakah kamu yakin?</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal()">Batal</button>
+                <button class="btn btn-danger" id="modalConfirm">Ya, Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-icon success">
+                <i class="fas fa-check"></i>
+            </div>
+            <h2>Berhasil!</h2>
+            <p id="successMessage">Data berhasil disimpan</p>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="closeSuccessModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
