@@ -230,12 +230,19 @@
                     <div class="input-group">
                         <label><i class="fas fa-camera"></i> Foto Aset</label>
                         <div class="photo-section">
-                            <div id="photoPreview" class="photo-preview" onclick="triggerCamera()">
+                            <div id="photoPreview" class="photo-preview" onclick="showPhotoOptions()">
                                 <i class="fas fa-camera"></i>
                                 <span>Ketik untuk ambil foto</span>
                             </div>
                             <input type="file" id="inputFoto" accept="image/*" capture="environment" class="hidden" onchange="handlePhoto(event)">
+                            <input type="file" id="inputFotoGallery" accept="image/*" class="hidden" onchange="handlePhoto(event)">
                             <div id="photoActions" class="photo-actions hidden">
+                                <button type="button" class="btn btn-sm btn-primary" onclick="triggerCamera()">
+                                    <i class="fas fa-camera"></i> Kamera
+                                </button>
+                                <button type="button" class="btn btn-sm btn-info" onclick="triggerGallery()">
+                                    <i class="fas fa-images"></i> Galeri
+                                </button>
                                 <button type="button" class="btn btn-sm btn-danger" onclick="removePhoto()">
                                     <i class="fas fa-trash"></i> Hapus
                                 </button>

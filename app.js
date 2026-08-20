@@ -762,8 +762,55 @@ function updateLocationAutocomplete() {
 }
 
 // ===== PHOTO HANDLING =====
+function showPhotoOptions() {
+    // If photo exists, show actions (camera/gallery/delete)
+    if (currentPhoto) return;
+    // Show choice: camera or gallery
+    showPhotoModal();
+}
+
+function showPhotoModal() {
+    // Create a mini modal for photo source selection
+    const existing = document.getElementById('photoModal');
+    if (existing) existing.remove();
+
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+    const modal = document.createElement('div');
+    modal.id = 'photoModal';
+    modal.className = 'modal show';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-icon"><i class="fas fa-camera"></i></div>
+            <h2>Ambil Foto</h2>
+            <p>Pilih sumber foto aset</p>
+            <div class="modal-actions" style="flex-direction: column; gap: 8px;">
+                <button class="btn btn-primary btn-full" onclick="triggerCamera()">
+                    <i class="fas fa-camera"></i> Ambil dari Kamera
+                </button>
+                <button class="btn btn-info btn-full" onclick="triggerGallery()">
+                    <i class="fas fa-images"></i> Pilih dari Galeri
+                </button>
+                <button class="btn btn-secondary" onclick="closePhotoModal()">Batal</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function closePhotoModal() {
+    const modal = document.getElementById('photoModal');
+    if (modal) modal.remove();
+}
+
 function triggerCamera() {
+    closePhotoModal();
     document.getElementById('inputFoto').click();
+}
+
+function triggerGallery() {
+    closePhotoModal();
+    document.getElementById('inputFotoGallery').click();
 }
 
 function handlePhoto(event) {
@@ -838,6 +885,8 @@ function showPhotoPreview(src) {
     preview.innerHTML = `<img src="${src}" alt="Foto Aset">`;
     preview.onclick = null;
     actions.classList.remove('hidden');
+    // Hide default buttons, show delete only
+    actions.querySelectorAll('.btn-primary, .btn-info').forEach(b => b.style.display = 'none');
 }
 
 function removePhoto() {
@@ -852,9 +901,10 @@ function resetPhoto() {
         <i class="fas fa-camera"></i>
         <span>Ketik untuk ambil foto</span>
     `;
-    preview.onclick = triggerCamera;
+    preview.onclick = showPhotoOptions;
     actions.classList.add('hidden');
     document.getElementById('inputFoto').value = '';
+    document.getElementById('inputFotoGallery').value = '';
 }
 
 // ===== EXCEL IMPORT =====
