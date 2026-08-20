@@ -419,7 +419,8 @@ function forceLoadFromFirestore(satker) {
         .then((metaDoc) => {
             const chunkCount = metaDoc.exists ? (metaDoc.data().chunkCount || 0) : 0;
             if (chunkCount === 0) {
-                allAssets[satker] = [];
+                // No Firestore data — keep localStorage data, don't overwrite
+                console.log('Firestore: no meta for ' + satker + ', keeping local data');
                 return firebaseDb.collection('verifications').doc(satker).get();
             }
             const promises = [];
