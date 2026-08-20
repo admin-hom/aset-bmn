@@ -40,9 +40,11 @@ function selectSatker(satker) {
     currentSatker = satker;
     currentAssets = allAssets[satker] || [];
     document.getElementById('headerSatkerName').textContent = SATKER_MAP[satker];
+    unverifiedShowCount = 10;
     showPage('dashboard');
     updateStats();
     renderRecentList();
+    renderUnverifiedList();
 }
 
 function goBack() {
@@ -76,6 +78,7 @@ function showPage(page) {
 
         // Load data for specific pages
         if (page === 'history') filterHistory();
+        if (page === 'home') renderUnverifiedList();
     }
 }
 
@@ -290,6 +293,71 @@ function renderKondisiStats() {
 }
 
 // ===== RENDER RECENT LIST =====
+let unverifiedShowCount = 10;
+
+function renderUnverifiedList() {
+    const container = document.getElementById('unverifiedList');
+    const countEl = document.getElementById('unverifiedCount');
+    const btnMore = document.getElementById('btnLoadMore');
+    if (!container) return;
+
+    const verifiedSet = new Set(
+        (verifications[currentSatker] || []).map(v => v.kodeBarang + '|' + v.nup)
+    );
+
+    const unverified = currentAssets.filter(a => !verifiedSet.has(a.kodeBarang + '|' + a.nup));
+
+    if (countEl) {
+        countEl.textContent = unverified.length > 0 ? unverified.length : '';
+    }
+
+    if (unverified.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state-small">
+                <i class="fas fa-check-circle"></i>
+                <p>Semua aset sudah terverifikasi!</p>
+            </div>
+        `;
+        if (btnMore) btnMore.classList.add('hidden');
+        return;
+    }
+
+    const showItems = unverified.slice(0, unverifiedShowCount);
+
+    container.innerHTML = showItems.map(a => `
+        <div class="unverified-item" onclick="goVerifyAsset('${escapeHtml(a.kodeBarang)}', '${escapeHtml(a.nup)}')">
+            <div class="uv-icon">
+                <i class="fas fa-box-open"></i>
+            </div>
+            <div class="uv-info">
+                <div class="uv-name">${escapeHtml(a.namaBarang || 'Tanpa Nama')}</div>
+                <div class="uv-detail">${escapeHtml(a.merk || '')} ${escapeHtml(a.tipe || '')} | KB: ${escapeHtml(a.kodeBarang)} | NUP: ${escapeHtml(a.nup)}</div>
+            </div>
+            <span class="uv-action">Verifikasi →</span>
+        </div>
+    `).join('');
+
+    if (btnMore) {
+        if (unverified.length > unverifiedShowCount) {
+            btnMore.classList.remove('hidden');
+            btnMore.innerHTML = `<i class="fas fa-arrow-down"></i> Tampilkan ${unverified.length - unverifiedShowCount} Lagi`;
+        } else {
+            btnMore.classList.add('hidden');
+        }
+    }
+}
+
+function loadMoreUnverified() {
+    unverifiedShowCount += 20;
+    renderUnverifiedList();
+}
+
+function goVerifyAsset(kodeBarang, nup) {
+    document.getElementById('inputKodeBarang').value = kodeBarang;
+    document.getElementById('inputNUP').value = nup;
+    searchAsset();
+}
+
 function renderRecentList() {
     const container = document.getElementById('recentList');
     const verifs = verifications[currentSatker] || [];

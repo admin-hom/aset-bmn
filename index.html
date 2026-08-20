@@ -118,6 +118,20 @@
                     </div>
                 </div>
 
+                <!-- Aset Belum Diverifikasi -->
+                <div class="recent-section">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Belum Diverifikasi <span id="unverifiedCount" class="unverified-badge"></span></h3>
+                    <div id="unverifiedList" class="recent-list">
+                        <div class="empty-state-small">
+                            <i class="fas fa-check-circle"></i>
+                            <p>Semua aset sudah terverifikasi!</p>
+                        </div>
+                    </div>
+                    <button id="btnLoadMore" class="btn btn-outline-dark btn-full hidden" onclick="loadMoreUnverified()">
+                        <i class="fas fa-arrow-down"></i> Tampilkan Lebih Banyak
+                    </button>
+                </div>
+
                 <!-- Recent Verifications -->
                 <div class="recent-section">
                     <h3><i class="fas fa-clock"></i> Verifikasi Terakhir</h3>
