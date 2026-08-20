@@ -770,12 +770,66 @@ function handlePhoto(event) {
     const file = event.target.files[0];
     if (!file) return;
 
+    const originalSize = file.size;
+
     const reader = new FileReader();
     reader.onload = (e) => {
-        currentPhoto = e.target.result;
-        showPhotoPreview(currentPhoto);
+        compressPhoto(e.target.result, originalSize).then(compressed => {
+            currentPhoto = compressed;
+            showPhotoPreview(currentPhoto);
+        });
     };
     reader.readAsDataURL(file);
+}
+
+// ===== PHOTO COMPRESSION =====
+function compressPhoto(dataUrl, originalSize) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let { width, height } = img;
+
+            // Max dimensions: 1200px on longest side
+            const MAX_DIM = 1200;
+            if (width > MAX_DIM || height > MAX_DIM) {
+                if (width > height) {
+                    height = Math.round((height / width) * MAX_DIM);
+                    width = MAX_DIM;
+                } else {
+                    width = Math.round((width / height) * MAX_DIM);
+                    height = MAX_DIM;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Compress to JPEG quality 0.7 (70%)
+            const compressed = canvas.toDataURL('image/jpeg', 0.7);
+            const compressedSize = Math.round((compressed.length - 'data:image/jpeg;base64,'.length) * 0.75);
+
+            // Stats
+            const saved = originalSize - compressedSize;
+            const percent = originalSize > 0 ? Math.round((saved / originalSize) * 100) : 0;
+
+            if (saved > 0) {
+                showToast(`Foto dikompres: ${formatBytes(originalSize)} → ${formatBytes(compressedSize)} (-${percent}%)`, 'info');
+            }
+
+            resolve(compressed);
+        };
+        img.src = dataUrl;
+    });
+}
+
+function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
 }
 
 function showPhotoPreview(src) {
