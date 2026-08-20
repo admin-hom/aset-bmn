@@ -97,7 +97,11 @@ function pushToFirebase() {
     updateSyncStatus('syncing');
     
     const satkerAssets = allAssets[currentSatker] || [];
-    const satkerVerifs = verifications[currentSatker] || [];
+    // Strip photos before pushing to Firestore (stay under 1MB limit)
+    const satkerVerifs = (verifications[currentSatker] || []).map(v => {
+        const { foto, ...rest } = v;
+        return rest;
+    });
     const chunks = chunkArray(satkerAssets, CHUNK_SIZE);
     
     // Delete old chunk docs that are no longer needed
