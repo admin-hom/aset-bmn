@@ -16,7 +16,7 @@ const SATKER_MAP = {
     bimas: 'Bimbingan Masyarakat Islam'
 };
 
-// ===== FIREBASE INIT =====
+// ===== FIREBASE INIT (Firestore) =====
 function initFirebase() {
     try {
         if (typeof FIREBASE_CONFIG === 'undefined' || !CLOUD_SYNC_ENABLED) {
@@ -28,8 +28,8 @@ function initFirebase() {
             return false;
         }
         firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
-        firebaseDb = firebaseApp.database();
-        console.log('Firebase: connected!');
+        firebaseDb = firebaseApp.firestore();
+        console.log('Firestore: connected!');
 
         // Listen online/offline
         window.addEventListener('online', () => { isOnline = true; updateSyncStatus('syncing'); syncFromFirebase(); });
@@ -46,9 +46,11 @@ function initFirebase() {
 
 function listenToFirebase() {
     if (!firebaseDb) return;
-    firebaseDb.ref('assets').on('value', (snap) => {
-        const data = snap.val();
-        if (data) {
+    
+    // Listen to assets collection
+    firebaseDb.collection('assets').doc('allAssets').onSnapshot((doc) => {
+        if (doc.exists) {
+            const data = doc.data();
             allAssets = { sekretariat: [], pendidikan: [], bimas: [], ...data };
             currentAssets = allAssets[currentSatker] || [];
             saveData(); // also save to localStorage
@@ -57,53 +59,76 @@ function listenToFirebase() {
             renderUnverifiedList();
             updateSyncStatus('synced');
         }
+    }, (err) => {
+        console.error('Firestore assets listener error:', err);
+        updateSyncStatus('error');
     });
-    firebaseDb.ref('verifications').on('value', (snap) => {
-        const data = snap.val();
-        if (data) {
+    
+    // Listen to verifications collection
+    firebaseDb.collection('verifications').doc('allVerifications').onSnapshot((doc) => {
+        if (doc.exists) {
+            const data = doc.data();
             verifications = { sekretariat: [], pendidikan: [], bimas: [], ...data };
             saveData();
             updateStats();
             renderRecentList();
             renderUnverifiedList();
         }
+    }, (err) => {
+        console.error('Firestore verifications listener error:', err);
+        updateSyncStatus('error');
     });
 }
 
 function pushToFirebase() {
     if (!firebaseDb || !isOnline) return;
     updateSyncStatus('syncing');
-    try {
-        firebaseDb.ref('assets').set(allAssets);
-        firebaseDb.ref('verifications').set(verifications);
-        updateSyncStatus('synced');
-    } catch (err) {
-        console.error('Firebase push error:', err);
-        updateSyncStatus('error');
-    }
+    
+    // Push assets
+    firebaseDb.collection('assets').doc('allAssets').set(allAssets)
+        .then(() => {
+            // Push verifications
+            return firebaseDb.collection('verifications').doc('allVerifications').set(verifications);
+        })
+        .then(() => {
+            updateSyncStatus('synced');
+        })
+        .catch(err => {
+            console.error('Firestore push error:', err);
+            updateSyncStatus('error');
+        });
 }
 
 function syncFromFirebase() {
     if (!firebaseDb) return;
     updateSyncStatus('syncing');
-    Promise.all([
-        firebaseDb.ref('assets').once('value'),
-        firebaseDb.ref('verifications').once('value')
-    ]).then(([assetsSnap, verifSnap]) => {
-        const assetsData = assetsSnap.val();
-        const verifData = verifSnap.val();
-        if (assetsData) allAssets = { sekretariat: [], pendidikan: [], bimas: [], ...assetsData };
-        if (verifData) verifications = { sekretariat: [], pendidikan: [], bimas: [], ...verifData };
-        currentAssets = allAssets[currentSatker] || [];
-        saveData();
-        updateStats();
-        renderRecentList();
-        renderUnverifiedList();
-        updateSyncStatus('synced');
-    }).catch(err => {
-        console.error('Firebase sync error:', err);
-        updateSyncStatus('error');
-    });
+    
+    // Get assets
+    firebaseDb.collection('assets').doc('allAssets').get()
+        .then((assetsDoc) => {
+            if (assetsDoc.exists) {
+                const assetsData = assetsDoc.data();
+                allAssets = { sekretariat: [], pendidikan: [], bimas: [], ...assetsData };
+            }
+            // Get verifications
+            return firebaseDb.collection('verifications').doc('allVerifications').get();
+        })
+        .then((verifDoc) => {
+            if (verifDoc.exists) {
+                const verifData = verifDoc.data();
+                verifications = { sekretariat: [], pendidikan: [], bimas: [], ...verifData };
+            }
+            currentAssets = allAssets[currentSatker] || [];
+            saveData();
+            updateStats();
+            renderRecentList();
+            renderUnverifiedList();
+            updateSyncStatus('synced');
+        })
+        .catch(err => {
+            console.error('Firestore sync error:', err);
+            updateSyncStatus('error');
+        });
 }
 
 function updateSyncStatus(status) {

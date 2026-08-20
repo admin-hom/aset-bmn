@@ -81,12 +81,33 @@ Data tersimpan di browser lokal. Kalau mau data online:
 - Buka browser yang sama
 - Data otomatis tersimpan selama belum clear cache
 - Bisa pakai extension seperti "LocalStorage Manager" untuk backup
+- **Firestore Sync**: Aktifkan cloud sync di `firebase-config.js` untuk sinkronisasi antar device
 
 ### Backup Data
 1. Buka browser DevTools (F12)
 2. Tab Application → Local Storage
 3. Copy semua data di `assets`
 4. Simpan ke file .json
+
+### Setup Firebase Firestore
+1. Buka [Firebase Console](https://console.firebase.google.com)
+2. Create Project → nama: `aset-bmn-sync`
+3. Buka **Firestore Database** → Create Database → Start in **Test Mode**
+4. Buka **Project Settings** → copy config
+5. Edit file `firebase-config.js`
+6. Set `CLOUD_SYNC_ENABLED = true`
+
+### Firestore Security Rules
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+```
 
 ---
 
