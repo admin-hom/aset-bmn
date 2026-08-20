@@ -67,6 +67,7 @@
             </button>
             <div class="header-title">
                 <span id="headerSatkerName">Sekretariat Jendral</span>
+                <span id="syncIndicator" class="sync-indicator"></span>
             </div>
             <button class="btn-icon" onclick="showPage('dashboard')">
                 <i class="fas fa-chart-pie"></i>
@@ -396,6 +397,25 @@
                     </div>
 
                     <div class="admin-card">
+                        <h3><i class="fas fa-cloud"></i> Cloud Sync</h3>
+                        <div id="firebaseStatus" class="firebase-status">
+                            <p class="text-muted" style="font-size: 0.85rem;">Firebase belum dikonfigurasi.</p>
+                            <p class="text-muted" style="font-size: 0.8rem; margin-top: 8px;">Untuk sync data antar device:</p>
+                            <ol style="font-size: 0.8rem; color: var(--text-muted); margin: 8px 0 12px 16px; line-height: 1.8;">
+                                <li>Buka <a href="https://console.firebase.google.com" target="_blank" style="color: var(--primary);">Firebase Console</a></li>
+                                <li>Create Project → nama bebas</li>
+                                <li>Buka <strong>Realtime Database</strong> → Start in <strong>Test Mode</strong></li>
+                                <li>Buka <strong>Project Settings</strong> → copy config</li>
+                                <li>Edit file <code>firebase-config.js</code></li>
+                                <li>Set <code>CLOUD_SYNC_ENABLED = true</code></li>
+                            </ol>
+                            <button class="btn btn-primary btn-full" onclick="testFirebaseConnection()">
+                                <i class="fas fa-plug"></i> Test Koneksi Firebase
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="admin-card">
                         <h3><i class="fas fa-info-circle"></i> Tentang</h3>
                         <div class="about-info">
                             <p><strong>Verifikasi Aset BMN</strong></p>
@@ -543,6 +563,11 @@
             </div>
         </div>
     </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="app.js"></script>

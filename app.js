@@ -5,6 +5,10 @@ let allAssets = {}; // All assets grouped by satker
 let verifications = {}; // Verifications grouped by satker
 let currentAsset = null;
 let currentPhoto = null;
+let firebaseApp = null;
+let firebaseDb = null;
+let isOnline = navigator.onLine;
+let syncStatus = 'local'; // local | syncing | synced | error
 
 const SATKER_MAP = {
     sekretariat: 'Sekretariat Jendral',
@@ -12,12 +16,117 @@ const SATKER_MAP = {
     bimas: 'Bimbingan Masyarakat Islam'
 };
 
+// ===== FIREBASE INIT =====
+function initFirebase() {
+    try {
+        if (typeof FIREBASE_CONFIG === 'undefined' || !CLOUD_SYNC_ENABLED) {
+            console.log('Firebase: disabled (local mode)');
+            return false;
+        }
+        if (FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') {
+            console.log('Firebase: not configured yet');
+            return false;
+        }
+        firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+        firebaseDb = firebaseApp.database();
+        console.log('Firebase: connected!');
+
+        // Listen online/offline
+        window.addEventListener('online', () => { isOnline = true; updateSyncStatus('syncing'); syncFromFirebase(); });
+        window.addEventListener('offline', () => { isOnline = false; updateSyncStatus('local'); });
+
+        // Listen for real-time changes
+        listenToFirebase();
+        return true;
+    } catch (err) {
+        console.error('Firebase init error:', err);
+        return false;
+    }
+}
+
+function listenToFirebase() {
+    if (!firebaseDb) return;
+    firebaseDb.ref('assets').on('value', (snap) => {
+        const data = snap.val();
+        if (data) {
+            allAssets = { sekretariat: [], pendidikan: [], bimas: [], ...data };
+            currentAssets = allAssets[currentSatker] || [];
+            saveData(); // also save to localStorage
+            updateStats();
+            renderRecentList();
+            renderUnverifiedList();
+            updateSyncStatus('synced');
+        }
+    });
+    firebaseDb.ref('verifications').on('value', (snap) => {
+        const data = snap.val();
+        if (data) {
+            verifications = { sekretariat: [], pendidikan: [], bimas: [], ...data };
+            saveData();
+            updateStats();
+            renderRecentList();
+            renderUnverifiedList();
+        }
+    });
+}
+
+function pushToFirebase() {
+    if (!firebaseDb || !isOnline) return;
+    updateSyncStatus('syncing');
+    try {
+        firebaseDb.ref('assets').set(allAssets);
+        firebaseDb.ref('verifications').set(verifications);
+        updateSyncStatus('synced');
+    } catch (err) {
+        console.error('Firebase push error:', err);
+        updateSyncStatus('error');
+    }
+}
+
+function syncFromFirebase() {
+    if (!firebaseDb) return;
+    updateSyncStatus('syncing');
+    Promise.all([
+        firebaseDb.ref('assets').once('value'),
+        firebaseDb.ref('verifications').once('value')
+    ]).then(([assetsSnap, verifSnap]) => {
+        const assetsData = assetsSnap.val();
+        const verifData = verifSnap.val();
+        if (assetsData) allAssets = { sekretariat: [], pendidikan: [], bimas: [], ...assetsData };
+        if (verifData) verifications = { sekretariat: [], pendidikan: [], bimas: [], ...verifData };
+        currentAssets = allAssets[currentSatker] || [];
+        saveData();
+        updateStats();
+        renderRecentList();
+        renderUnverifiedList();
+        updateSyncStatus('synced');
+    }).catch(err => {
+        console.error('Firebase sync error:', err);
+        updateSyncStatus('error');
+    });
+}
+
+function updateSyncStatus(status) {
+    syncStatus = status;
+    const indicator = document.getElementById('syncIndicator');
+    if (!indicator) return;
+    const labels = {
+        local: '<i class="fas fa-cloud" style="color:var(--text-muted)"></i> <span style="color:var(--text-muted)">Local</span>',
+        syncing: '<i class="fas fa-sync fa-spin" style="color:var(--warning)"></i> <span style="color:var(--warning)">Syncing...</span>',
+        synced: '<i class="fas fa-cloud" style="color:var(--success)"></i> <span style="color:var(--success)">Synced</span>',
+        error: '<i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i> <span style="color:var(--danger)">Error</span>'
+    };
+    indicator.innerHTML = labels[status] || labels.local;
+}
+
 // ===== INITIALIZE =====
 document.addEventListener('DOMContentLoaded', () => {
+    initFirebase();
     loadData();
     setupDragDrop();
     setupFormListeners();
     loadDarkMode();
+    renderSyncIndicator();
 });
 
 // ===== DATA MANAGEMENT =====
@@ -34,6 +143,7 @@ function loadData() {
 function saveData() {
     localStorage.setItem('allAssets', JSON.stringify(allAssets));
     localStorage.setItem('verifications', JSON.stringify(verifications));
+    pushToFirebase();
 }
 
 // ===== SATKER SELECTION =====
@@ -1056,6 +1166,44 @@ function viewHistoryDetail(kodeBarang, nup) {
     } else {
         showToast('Aset tidak ditemukan di data', 'error');
     }
+}
+
+function renderSyncIndicator() {
+    const indicator = document.getElementById('syncIndicator');
+    if (!indicator) return;
+    if (firebaseDb) {
+        updateSyncStatus('synced');
+    } else {
+        indicator.innerHTML = '<i class="fas fa-cloud" style="color:var(--text-muted)"></i> <span style="color:var(--text-muted)">Local</span>';
+    }
+    // Update Firebase status in Settings
+    const statusEl = document.getElementById('firebaseStatus');
+    if (statusEl && firebaseDb) {
+        statusEl.innerHTML = `
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                <i class="fas fa-check-circle" style="color:var(--success);font-size:1.2rem;"></i>
+                <strong style="color:var(--success);">Firebase Connected</strong>
+            </div>
+            <p class="text-muted" style="font-size:0.85rem;">Data otomatis sync antar device.</p>
+            <button class="btn btn-primary btn-full" onclick="syncFromFirebase()" style="margin-top:12px;">
+                <i class="fas fa-sync"></i> Sync Manual
+            </button>
+        `;
+    }
+}
+
+function testFirebaseConnection() {
+    if (!firebaseDb) {
+        showToast('Firebase belum dikonfigurasi! Edit firebase-config.js dulu.', 'error');
+        return;
+    }
+    firebaseDb.ref('.info/connected').once('value', (snap) => {
+        if (snap.val()) {
+            showToast('Firebase connected! ✅', 'success');
+        } else {
+            showToast('Firebase unreachable ❌', 'error');
+        }
+    });
 }
 
 // ===== DARK MODE =====
