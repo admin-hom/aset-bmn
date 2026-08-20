@@ -479,7 +479,21 @@ function showPage(page) {
 
         // Load data for specific pages
         if (page === 'history') filterHistory();
-        if (page === 'home') renderUnverifiedList();
+        if (page === 'home') {
+            renderUnverifiedList();
+            clearSearchFields();
+        }
+    }
+}
+
+function clearSearchFields() {
+    document.getElementById('inputKodeBarang').value = '';
+    document.getElementById('inputNUP').value = '';
+    document.getElementById('inputSearchName').value = '';
+    const results = document.getElementById('searchNameResults');
+    if (results) {
+        results.classList.add('hidden');
+        results.innerHTML = '';
     }
 }
 
