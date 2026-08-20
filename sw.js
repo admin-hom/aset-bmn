@@ -1,14 +1,15 @@
 // ===== Service Worker for PWA =====
-const CACHE_NAME = 'aset-bmn-v2';
+const CACHE_NAME = 'aset-bmn-v3';
+const BASE = self.location.pathname.replace(/\/sw\.js$/, '/');
 const ASSETS = [
-    '/',
-    '/index.html',
-    '/style.css',
-    '/app.js',
-    '/manifest.json',
-    '/icon-192.svg',
-    '/icon-512.svg',
-    '/firebase-config.js',
+    BASE,
+    BASE + 'index.html',
+    BASE + 'style.css',
+    BASE + 'app.js',
+    BASE + 'manifest.json',
+    BASE + 'icon-192.svg',
+    BASE + 'icon-512.svg',
+    BASE + 'firebase-config.js',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
     'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
     'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js',
@@ -41,7 +42,7 @@ self.addEventListener('activate', (event) => {
     self.clients.claim();
 });
 
-// Fetch - Network first for API/Firestore, Cache first for static
+// Fetch - Network first for Firebase, Cache first for local assets
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
@@ -69,7 +70,10 @@ self.addEventListener('fetch', (event) => {
                 return fetchResponse;
             });
         }).catch(() => {
-            return caches.match('/index.html');
+            // Fallback: serve index.html for navigation requests
+            if (event.request.mode === 'navigate') {
+                return caches.match(BASE + 'index.html');
+            }
         })
     );
 });
