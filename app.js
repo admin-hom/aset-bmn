@@ -424,9 +424,9 @@ function processExcelFile(file) {
     reader.onload = (e) => {
         try {
             const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
+            const workbook = XLSX.read(data, { type: 'array', cellStyles: true });
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: '', raw: false });
 
             if (jsonData.length === 0) {
                 showImportProgress(false);
@@ -434,24 +434,65 @@ function processExcelFile(file) {
                 return;
             }
 
+            // Debug: show actual column names found
+            const actualCols = Object.keys(jsonData[0] || {});
+            console.log('Excel columns found:', actualCols);
+
             showImportProgress(true, `Memproses ${jsonData.length} data...`);
 
-            // Map columns
+            // Map columns - much more flexible matching
             let imported = 0;
             const newAssets = [];
 
             jsonData.forEach((row, i) => {
-                // Try to find column names (flexible mapping)
-                const kodeBarang = findColumnValue(row, ['Kode Barang', 'kode_barang', 'kodeBarang', 'KodeBarang']);
-                const nup = findColumnValue(row, ['NUP', 'nup', 'Nup']);
-                const namaBarang = findColumnValue(row, ['Nama Barang', 'nama_barang', 'namaBarang', 'NamaBarang', 'Nama']);
-                const merk = findColumnValue(row, ['Merk', 'merk', 'MERK']);
-                const tipe = findColumnValue(row, ['Tipe', 'tipe', 'TIPE', 'Spesifikasi', 'spek']);
-                const kondisi = findColumnValue(row, ['Kondisi', 'kondisi', 'KONDISI']);
-                const nilaiBuku = findColumnValue(row, ['Nilai Buku', 'nilai_buku', 'nilaiBuku', 'NilaiBuku']);
-                const statusBMN = findColumnValue(row, ['Status BMN', 'status_bmn', 'statusBMN', 'StatusBMN', 'Status']);
-                const jenisBMN = findColumnValue(row, ['Jenis BMN', 'jenis_bmn', 'jenisBMN', 'JenisBMN', 'Jenis']);
-                const umurAset = findColumnValue(row, ['Umur Aset', 'umur_asset', 'umurAset', 'UmurAset', 'Umur']);
+                // Very flexible column matching for SIMAN exports
+                const kodeBarang = findColumnValue(row, [
+                    'Kode Barang', 'kode_barang', 'kodeBarang', 'KodeBarang', 'KODE BARANG',
+                    'Kode Barang BMN', 'KD.BRG', 'Kd Brg', 'KD BRG', 'KodeBRG', 'kodebrg',
+                    'Kode Barang BMN', 'Kode_Brg', 'kode_brg'
+                ]);
+                const nup = findColumnValue(row, [
+                    'NUP', 'nup', 'Nup', 'N.U.P', 'No. Urut', 'Nomor Urut', 'NOMOR URUT',
+                    'No Urut', 'no_urut'
+                ]);
+                const namaBarang = findColumnValue(row, [
+                    'Nama Barang', 'nama_barang', 'namaBarang', 'NamaBarang', 'NAMA BARANG',
+                    'Nama', 'nama', 'NAMA', 'Nama_Brg', 'nama_brg'
+                ]);
+                const merk = findColumnValue(row, [
+                    'Merk', 'merk', 'MERK', 'Merk/Type', 'Merk/Type/Merek', 'Merek',
+                    'merek', 'MEREK', 'Brand', 'brand'
+                ]);
+                const tipe = findColumnValue(row, [
+                    'Tipe', 'tipe', 'TIPE', 'Spesifikasi', 'spek', 'SPEK',
+                    'Type', 'type', 'TYPE', 'Type/Spesifikasi', 'Spesifikasi/Type',
+                    'Tipe/Spesifikasi', 'Tipe_Spesifikasi', 'tipe_spesifikasi',
+                    'Merk/Type'
+                ]);
+                const kondisi = findColumnValue(row, [
+                    'Kondisi', 'kondisi', 'KONDISI', 'Kondisi Barang', 'Kondisi_Barang',
+                    'Kondisi BMN', 'Kondisi_Aset', ' kondisi'
+                ]);
+                const nilaiBuku = findColumnValue(row, [
+                    'Nilai Buku', 'nilai_buku', 'nilaiBuku', 'NilaiBuku', 'NILAI BUKU',
+                    'Nilai Perolehan', 'nilai_perolehan', 'NilaiPerolehan', 'NILAI PEROLEHAN',
+                    'Nilai Akhir', 'nilai_akhir', 'Harga Perolehan', 'harga_perolehan',
+                    'Nilai', 'nilai', 'NILAI'
+                ]);
+                const statusBMN = findColumnValue(row, [
+                    'Status BMN', 'status_bmn', 'statusBMN', 'StatusBMN', 'STATUS BMN',
+                    'Status', 'status', 'STATUS', 'Status Barang', 'Status_Barang',
+                    'Status Aset'
+                ]);
+                const jenisBMN = findColumnValue(row, [
+                    'Jenis BMN', 'jenis_bmn', 'jenisBMN', 'JenisBMN', 'JENIS BMN',
+                    'Jenis', 'jenis', 'JENIS', 'Jenis Barang', 'Jenis_Barang',
+                    'Jenis BMN/Barang', 'Jenis_Aset'
+                ]);
+                const umurAset = findColumnValue(row, [
+                    'Umur Aset', 'umur_asset', 'umurAset', 'UmurAset', 'UMUR ASET',
+                    'Umur', 'umur', 'UMUR', 'Umur Barang'
+                ]);
 
                 if (!kodeBarang || !nup) return; // Skip rows without key data
 
@@ -479,7 +520,13 @@ function processExcelFile(file) {
             renderRecentList();
 
             showImportProgress(false);
-            showToast(`${imported} aset berhasil diimport!`, 'success');
+
+            if (imported === 0) {
+                // Show helpful debug message with column names
+                showToast(`0 aset diimport. Kolom ditemukan: ${actualCols.slice(0, 5).join(', ')}...`, 'error');
+            } else {
+                showToast(`${imported} aset berhasil diimport!`, 'success');
+            }
 
             // Clear input
             document.getElementById('fileInput').value = '';
@@ -493,16 +540,29 @@ function processExcelFile(file) {
 }
 
 function findColumnValue(row, possibleNames) {
+    const keys = Object.keys(row);
+    
+    // Pass 1: Exact match
     for (const name of possibleNames) {
-        if (row[name] !== undefined && row[name] !== '') {
+        if (row[name] !== undefined && row[name] !== '' && row[name] !== null) {
             return row[name];
         }
     }
-    // Try case-insensitive
-    const keys = Object.keys(row);
+    // Pass 2: Case-insensitive exact match
     for (const name of possibleNames) {
         const found = keys.find(k => k.toLowerCase() === name.toLowerCase());
-        if (found && row[found] !== '') {
+        if (found && row[found] !== '' && row[found] !== null) {
+            return row[found];
+        }
+    }
+    // Pass 3: Contains/substring match (e.g. 'Kode Barang BMN' contains 'Kode Barang')
+    for (const name of possibleNames) {
+        const cleanName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const found = keys.find(k => {
+            const cleanKey = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+            return cleanKey === cleanName || cleanKey.includes(cleanName) || cleanName.includes(cleanKey);
+        });
+        if (found && row[found] !== '' && row[found] !== null) {
             return row[found];
         }
     }
