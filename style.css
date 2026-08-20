@@ -1364,6 +1364,134 @@ body {
     font-size: 0.95rem;
 }
 
+/* ===== DARK MODE ===== */
+body.dark-mode {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --text: #f1f5f9;
+    --text-muted: #94a3b8;
+    --border: #334155;
+    --primary-light: #1e3a5f;
+    --success-light: #064e3b;
+    --danger-light: #7f1d1d;
+    --warning-light: #78350f;
+}
+
+body.dark-mode .satker-container {
+    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+}
+
+body.dark-mode .app-header {
+    background: #0f172a;
+}
+
+body.dark-mode .bottom-nav {
+    background: #1e293b;
+    border-top-color: #334155;
+}
+
+body.dark-mode .import-dropzone {
+    background: #1e293b;
+}
+
+body.dark-mode .photo-preview {
+    background: #1e293b;
+}
+
+body.dark-mode .detail-item {
+    background: #0f172a;
+}
+
+body.dark-mode .btn-outline-dark {
+    color: var(--text);
+    border-color: #475569;
+}
+
+body.dark-mode .btn-outline-dark:hover {
+    background: #334155;
+}
+
+body.dark-mode input,
+body.dark-mode textarea,
+body.dark-mode select {
+    background: #0f172a;
+    color: var(--text);
+    border-color: #475569;
+}
+
+body.dark-mode input:focus,
+body.dark-mode textarea:focus,
+body.dark-mode select:focus {
+    border-color: var(--primary);
+}
+
+/* Toggle Switch */
+.setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.setting-info {
+    flex: 1;
+}
+
+.setting-label {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.setting-desc {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.toggle-switch {
+    position: relative;
+    width: 50px;
+    height: 28px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: var(--border);
+    border-radius: 28px;
+    transition: all 0.3s;
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    left: 3px;
+    bottom: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: all 0.3s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background: var(--primary);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(22px);
+}
+
 /* ===== ABOUT INFO ===== */
 .about-info p {
     font-size: 0.9rem;

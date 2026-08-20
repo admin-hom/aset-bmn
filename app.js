@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadData();
     setupDragDrop();
     setupFormListeners();
+    loadDarkMode();
 });
 
 // ===== DATA MANAGEMENT =====
@@ -1004,6 +1005,23 @@ function viewHistoryDetail(kodeBarang, nup) {
     } else {
         showToast('Aset tidak ditemukan di data', 'error');
     }
+}
+
+// ===== DARK MODE =====
+function loadDarkMode() {
+    const isDark = localStorage.getItem('darkMode') === 'true';
+    const toggle = document.getElementById('darkModeToggle');
+    if (isDark) {
+        document.body.classList.add('dark-mode');
+    }
+    if (toggle) toggle.checked = isDark;
+}
+
+function toggleDarkMode() {
+    const toggle = document.getElementById('darkModeToggle');
+    const isDark = toggle.checked;
+    document.body.classList.toggle('dark-mode', isDark);
+    localStorage.setItem('darkMode', isDark);
 }
 
 // ===== HELPERS =====
