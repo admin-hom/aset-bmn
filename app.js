@@ -441,62 +441,72 @@ function processExcelFile(file) {
             const workbook = XLSX.read(data, { type: 'array' });
             console.log('Sheets:', workbook.SheetNames);
 
-            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            console.log('Sheet range:', firstSheet['!ref']);
-
-            // APPROACH 1: Read as raw array (header:1)
-            let rawRows = [];
-            try {
-                rawRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
-            } catch(e1) { console.log('Raw approach error:', e1); }
-            console.log('Approach 1 (raw):', rawRows.length, 'rows');
-
-            // APPROACH 2: Read as JSON
-            let jsonData = [];
-            try {
-                jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
-            } catch(e2) { console.log('JSON approach error:', e2); }
-            console.log('Approach 2 (JSON):', jsonData.length, 'rows');
-
-            // Pick the approach that returned data
+            // Scan ALL sheets to find the one with asset data
             let finalData = [];
+            let usedSheet = '';
 
-            if (jsonData.length > 0) {
-                // JSON approach worked - use it directly
-                finalData = jsonData;
-                console.log('Using JSON approach. Columns:', Object.keys(jsonData[0] || {}));
-            } else if (rawRows.length > 0) {
-                // Raw approach - scan for header row
-                console.log('Using raw approach, scanning header...');
-                const keywords = ['kode barang', 'kode_barang', 'nup', 'nama barang', 'no urut', 'keterangan'];
-                let headerIdx = -1;
-                for (let r = 0; r < Math.min(30, rawRows.length); r++) {
-                    const joined = rawRows[r].map(c => String(c||'').toLowerCase().trim()).join('||');
-                    if (keywords.some(kw => joined.includes(kw))) {
-                        headerIdx = r;
-                        break;
-                    }
+            for (const sheetName of workbook.SheetNames) {
+                const sheet = workbook.Sheets[sheetName];
+                const range = sheet['!ref'] || '';
+                console.log(`Sheet '${sheetName}' range: ${range}`);
+
+                // Read as raw array
+                let rawRows = [];
+                try {
+                    rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+                } catch(e) {}
+
+                // Read as JSON
+                let jsonRows = [];
+                try {
+                    jsonRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+                } catch(e) {}
+
+                console.log(`  Sheet '${sheetName}': raw=${rawRows.length}, json=${jsonRows.length}`);
+
+                // Try JSON first
+                if (jsonRows.length > 0) {
+                    finalData = jsonRows;
+                    usedSheet = sheetName;
+                    console.log(`  Using JSON from '${sheetName}'. Cols:`, Object.keys(jsonRows[0] || {}));
+                    break;
                 }
-                if (headerIdx >= 0) {
-                    const hdrs = rawRows[headerIdx].map(h => String(h||'').trim());
-                    for (let r = headerIdx + 1; r < rawRows.length; r++) {
-                        const row = rawRows[r];
-                        if (!row.some(c => c !== '' && c != null)) continue;
-                        const obj = {};
-                        hdrs.forEach((h, ci) => { if (h) obj[h] = row[ci] || ''; });
-                        finalData.push(obj);
+
+                // Try raw - scan for header
+                if (rawRows.length > 1) {
+                    const allKeywords = ['kode barang', 'kode_barang', 'nup', 'nama barang', 'nama', 'merk', 'kondisi', 'nilai', 'status', 'jenis', 'keterangan'];
+                    let headerIdx = -1;
+                    for (let r = 0; r < Math.min(30, rawRows.length); r++) {
+                        const joined = rawRows[r].map(c => String(c||'').toLowerCase().trim()).join('||');
+                        const matchCount = allKeywords.filter(kw => joined.includes(kw)).length;
+                        if (matchCount >= 2) { headerIdx = r; break; }
+                    }
+                    if (headerIdx >= 0) {
+                        const hdrs = rawRows[headerIdx].map(h => String(h||'').trim());
+                        for (let r = headerIdx + 1; r < rawRows.length; r++) {
+                            const row = rawRows[r];
+                            if (!row.some(c => c !== '' && c != null)) continue;
+                            const obj = {};
+                            hdrs.forEach((h, ci) => { if (h) obj[h] = row[ci] || ''; });
+                            finalData.push(obj);
+                        }
+                        if (finalData.length > 0) {
+                            usedSheet = sheetName;
+                            console.log(`  Using raw from '${sheetName}'. Header row ${headerIdx}, data: ${finalData.length}`);
+                            break;
+                        }
                     }
                 }
             }
 
             if (finalData.length === 0) {
                 showImportProgress(false);
-                const debug = rawRows.slice(0,3).map((r,i) => `R${i}:${JSON.stringify(r.slice(0,4))}`).join(' | ');
-                showToast(`Gagal baca! Ref:${firstSheet['!ref']} Raw:${rawRows.length} JSON:${jsonData.length} | ${debug}`, 'error');
+                const sheetInfo = workbook.SheetNames.join(', ');
+                showToast(`Gagal! 0 data di semua sheet (${sheetInfo}). Buka file di Excel dulu, pastikan ada data.`, 'error');
                 return;
             }
 
-            console.log('Final data rows:', finalData.length);
+            console.log(`Final: ${finalData.length} rows from sheet '${usedSheet}'`);
 
             showImportProgress(true, `Memproses ${finalData.length} data...`);
 
