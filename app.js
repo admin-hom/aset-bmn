@@ -424,19 +424,60 @@ function processExcelFile(file) {
     reader.onload = (e) => {
         try {
             const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array', cellStyles: true });
+            const workbook = XLSX.read(data, { type: 'array' });
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: '', raw: false });
 
-            if (jsonData.length === 0) {
+            // Read as raw array to handle merged cells & title rows
+            const rawRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+            console.log('Total raw rows:', rawRows.length);
+
+            if (rawRows.length === 0) {
                 showImportProgress(false);
                 showToast('File Excel kosong!', 'error');
                 return;
             }
 
-            // Debug: show actual column names found
-            const actualCols = Object.keys(jsonData[0] || {});
-            console.log('Excel columns found:', actualCols);
+            // Find header row: scan first 20 rows for row containing 'Kode Barang' or 'NUP'
+            let headerRowIndex = -1;
+            const headerKeywords = ['kode barang', 'kode_barang', 'nup', 'nama barang', 'no urut'];
+            for (let r = 0; r < Math.min(20, rawRows.length); r++) {
+                const rowStr = rawRows[r].map(c => String(c || '').toLowerCase().trim()).join('||');
+                const hasKeyword = headerKeywords.some(kw => rowStr.includes(kw));
+                if (hasKeyword) {
+                    headerRowIndex = r;
+                    break;
+                }
+            }
+
+            if (headerRowIndex === -1) {
+                showImportProgress(false);
+                showToast('Kolom Kode Barang/NUP tidak ditemukan! Cek format Excel.', 'error');
+                return;
+            }
+
+            console.log('Header found at row:', headerRowIndex);
+            const headers = rawRows[headerRowIndex].map(h => String(h || '').trim());
+            console.log('Headers:', headers);
+
+            // Build jsonData from header row onwards
+            const jsonData = [];
+            for (let r = headerRowIndex + 1; r < rawRows.length; r++) {
+                const row = rawRows[r];
+                // Skip completely empty rows
+                const hasData = row.some(c => c !== '' && c !== null && c !== undefined);
+                if (!hasData) continue;
+
+                const obj = {};
+                headers.forEach((h, ci) => {
+                    if (h) obj[h] = row[ci] !== undefined ? row[ci] : '';
+                });
+                jsonData.push(obj);
+            }
+
+            console.log('Data rows found:', jsonData.length);
+            if (jsonData.length > 0) {
+                console.log('First row:', jsonData[0]);
+            }
 
             showImportProgress(true, `Memproses ${jsonData.length} data...`);
 
@@ -522,8 +563,7 @@ function processExcelFile(file) {
             showImportProgress(false);
 
             if (imported === 0) {
-                // Show helpful debug message with column names
-                showToast(`0 aset diimport. Kolom ditemukan: ${actualCols.slice(0, 5).join(', ')}...`, 'error');
+                showToast(`0 aset diimport. Header: ${headers.slice(0, 5).join(', ')}...`, 'error');
             } else {
                 showToast(`${imported} aset berhasil diimport!`, 'success');
             }
