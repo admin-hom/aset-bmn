@@ -1858,6 +1858,41 @@ body.dark-mode select:focus {
     }
 }
 
+/* ===== UPDATE BANNER ===== */
+.update-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 99998;
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    padding: 10px 16px;
+    animation: slideDown 0.3s ease;
+}
+
+.update-banner-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.update-banner-content i.fa-sync-alt {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(0); }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 /* ===== INSTALL BANNER ===== */
 .install-banner {
     position: fixed;

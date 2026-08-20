@@ -36,6 +36,13 @@ self.addEventListener('install', (event) => {
     self.skipWaiting();
 });
 
+// Handle skip-waiting message from app
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
+});
+
 // Activate - clear old caches
 self.addEventListener('activate', (event) => {
     event.waitUntil(

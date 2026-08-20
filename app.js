@@ -210,13 +210,66 @@ function hideSplashScreen() {
 
 // ===== SERVICE WORKER =====
 function registerServiceWorker() {
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').then(reg => {
-            console.log('SW registered, scope:', reg.scope);
-        }).catch(err => {
-            console.log('SW registration failed:', err);
+    if (!('serviceWorker' in navigator)) return;
+    
+    navigator.serviceWorker.register('sw.js').then(reg => {
+        console.log('SW registered, scope:', reg.scope);
+        
+        // Check for updates every 30 seconds
+        setInterval(() => reg.update(), 30000);
+        
+        // Detect when new SW is installed & waiting
+        reg.addEventListener('updatefound', () => {
+            const newSW = reg.installing;
+            newSW.addEventListener('statechange', () => {
+                if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+                    // New version available!
+                    showUpdateBanner();
+                }
+            });
+        });
+    }).catch(err => {
+        console.log('SW registration failed:', err);
+    });
+    
+    // When new SW takes over, reload automatically
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+        }
+    });
+}
+
+function showUpdateBanner() {
+    if (document.getElementById('updateBanner')) return;
+    
+    const banner = document.createElement('div');
+    banner.id = 'updateBanner';
+    banner.className = 'update-banner';
+    banner.innerHTML = `
+        <div class="update-banner-content">
+            <i class="fas fa-sync-alt"></i>
+            <span>Versi baru tersedia!</span>
+            <button class="btn btn-primary btn-sm" onclick="applyUpdate()">
+                <i class="fas fa-redo"></i> Update
+            </button>
+        </div>
+    `;
+    document.body.appendChild(banner);
+}
+
+function applyUpdate() {
+    // Tell waiting SW to skip waiting & activate
+    if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.getRegistration().then(reg => {
+            if (reg && reg.waiting) {
+                reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
         });
     }
+    // controllerchange listener will auto-reload
 }
 
 // ===== PWA INSTALL PROMPT =====
