@@ -1165,7 +1165,8 @@ function exportExcel() {
             'Kondisi Aktual': verification?.kondisiAktual || '',
             'Catatan': verification?.catatan || '',
             'Tanggal Verifikasi': verification?.tanggalVerifikasi ?
-                new Date(verification.tanggalVerifikasi).toLocaleDateString('id-ID') : ''
+                new Date(verification.tanggalVerifikasi).toLocaleDateString('id-ID') : '',
+            'Foto (Base64)': verification?.foto ? verification.foto.substring(0, 50) + '...' : ''
         };
     });
 
@@ -1178,6 +1179,154 @@ function exportExcel() {
     XLSX.writeFile(wb, `Verifikasi_Aset_${satkerName}_${date}.xlsx`);
 
     showToast('Excel berhasil diexport!', 'success');
+}
+
+// ===== PDF EXPORT =====
+function exportPDF() {
+    const verifs = verifications[currentSatker] || [];
+    const satkerName = SATKER_MAP[currentSatker];
+
+    if (currentAssets.length === 0 && verifs.length === 0) {
+        showToast('Tidak ada data untuk diexport!', 'error');
+        return;
+    }
+
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const pageW = 210;
+        const margin = 15;
+        let y = margin;
+
+        // Header
+        doc.setFillColor(37, 99, 235);
+        doc.rect(0, 0, pageW, 35, 'F');
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Laporan Verifikasi Aset BMN', pageW / 2, 15, { align: 'center' });
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        doc.text(satkerName, pageW / 2, 23, { align: 'center' });
+        doc.setFontSize(9);
+        doc.text(`Dicetak: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, pageW / 2, 30, { align: 'center' });
+
+        y = 45;
+
+        // Stats summary
+        const total = currentAssets.length;
+        const verified = verifs.length;
+        const baik = verifs.filter(v => v.kondisiAktual === 'Baik').length;
+        const rusak = verifs.filter(v => v.kondisiAktual === 'Rusak Ringan' || v.kondisiAktual === 'Rusak Berat').length;
+
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Ringkasan:', margin, y);
+        y += 6;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.text(`Total Aset: ${total}  |  Terverifikasi: ${verified}  |  Baik: ${baik}  |  Rusak: ${rusak}  |  Belum: ${total - verified}`, margin, y);
+        y += 4;
+        doc.setDrawColor(200, 200, 200);
+        doc.line(margin, y, pageW - margin, y);
+        y += 8;
+
+        // Verified assets with photos
+        const verifiedAssets = verifs;
+
+        if (verifiedAssets.length === 0) {
+            doc.setFontSize(10);
+            doc.setTextColor(150, 150, 150);
+            doc.text('Belum ada aset yang diverifikasi.', pageW / 2, y + 20, { align: 'center' });
+        }
+
+        verifiedAssets.forEach((v, i) => {
+            // Check if need new page (need ~80mm for photo card)
+            if (y > 240) {
+                doc.addPage();
+                y = margin;
+            }
+
+            // Card background
+            const cardH = v.foto ? 62 : 30;
+            doc.setFillColor(248, 250, 252);
+            doc.setDrawColor(220, 220, 220);
+            doc.roundedRect(margin, y, pageW - margin * 2, cardH, 3, 3, 'FD');
+
+            // Index number
+            doc.setFillColor(37, 99, 235);
+            doc.circle(margin + 6, y + 6, 4, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(7);
+            doc.setFont('helvetica', 'bold');
+            doc.text(String(i + 1), margin + 6, y + 7.5, { align: 'center' });
+
+            // Asset info
+            let ty = y + 5;
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text(v.namaBarang || 'Tanpa Nama', margin + 14, ty);
+            ty += 5;
+
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 100, 100);
+            doc.text(`KB: ${v.kodeBarang || '-'}  |  NUP: ${v.nup || '-'}  |  ${v.merk || ''} ${v.tipe || ''}`, margin + 14, ty);
+            ty += 5;
+
+            // Kondisi & Lokasi
+            const kondisiColor = v.kondisiAktual === 'Baik' ? [22, 163, 74] :
+                               v.kondisiAktual === 'Rusak Ringan' ? [234, 179, 8] : [220, 38, 38];
+            doc.setFillColor(...kondisiColor);
+            doc.roundedRect(margin + 14, ty - 3, 28, 6, 1.5, 1.5, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(7);
+            doc.setFont('helvetica', 'bold');
+            doc.text(v.kondisiAktual || '-', margin + 28, ty, { align: 'center' });
+
+            doc.setTextColor(60, 60, 60);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.text(`Lokasi: ${v.lokasi || '-'}  |  ${v.tanggalVerifikasi ? new Date(v.tanggalVerifikasi).toLocaleDateString('id-ID') : '-'}`, margin + 46, ty);
+
+            // Photo
+            if (v.foto) {
+                try {
+                    doc.addImage(v.foto, 'JPEG', margin + 14, ty + 6, 40, 30);
+                    // Catatan next to photo
+                    if (v.catatan) {
+                        doc.setFontSize(8);
+                        doc.setTextColor(80, 80, 80);
+                        doc.text('Catatan:', margin + 58, ty + 9);
+                        const splitCatatan = doc.splitTextToSize(v.catatan, pageW - margin * 2 - 46);
+                        doc.text(splitCatatan, margin + 58, ty + 14);
+                    }
+                } catch (e) {
+                    console.log('Photo embed failed:', e);
+                }
+            }
+
+            y += cardH + 4;
+        });
+
+        // Footer on last page
+        const footerY = doc.internal.pageSize.height - 10;
+        doc.setFontSize(7);
+        doc.setTextColor(180, 180, 180);
+        doc.text('Generated by Verifikasi Aset BMN - Kementerian Agama RI', pageW / 2, footerY, { align: 'center' });
+
+        // Save
+        const date = new Date().toISOString().split('T')[0];
+        doc.save(`Laporan_Verifikasi_${satkerName.replace(/\s+/g, '_')}_${date}.pdf`);
+
+        showToast('PDF berhasil diexport dengan foto!', 'success');
+    } catch (err) {
+        console.error('PDF export error:', err);
+        showToast('Gagal export PDF: ' + err.message, 'error');
+    }
 }
 
 // ===== ADMIN =====
