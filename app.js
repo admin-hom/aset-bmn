@@ -44,31 +44,59 @@ function initFirebase() {
     }
 }
 
+const CHUNK_SIZE = 2000; // items per Firestore document
+
+function chunkArray(arr, size) {
+    const chunks = [];
+    for (let i = 0; i < arr.length; i += size) {
+        chunks.push(arr.slice(i, i + size));
+    }
+    return chunks;
+}
+
 function listenToFirebase() {
     if (!firebaseDb) return;
     
-    // Listen PER SATKER (not one big doc)
+    // Listen to meta doc for chunk count, then listen to each chunk
     Object.keys(SATKER_MAP).forEach(satker => {
-        // Assets listener
-        firebaseDb.collection('assets').doc(satker).onSnapshot((doc) => {
-            if (doc.exists) {
-                allAssets[satker] = doc.data().items || [];
-            } else {
+        // Assets: listen to meta (chunk count)
+        firebaseDb.collection('assets').doc(satker + '_meta').onSnapshot((metaDoc) => {
+            if (!metaDoc.exists) {
                 allAssets[satker] = [];
+                if (satker === currentSatker) {
+                    currentAssets = [];
+                    updateStats(); renderRecentList(); renderUnverifiedList();
+                }
+                return;
             }
-            if (satker === currentSatker) {
-                currentAssets = allAssets[currentSatker] || [];
-                updateStats();
-                renderRecentList();
-                renderUnverifiedList();
+            const chunkCount = metaDoc.data().chunkCount || 0;
+            if (chunkCount === 0) {
+                allAssets[satker] = [];
+                return;
             }
-            updateSyncStatus('synced');
+            // Fetch all chunks
+            const promises = [];
+            for (let i = 0; i < chunkCount; i++) {
+                promises.push(
+                    firebaseDb.collection('assets').doc(`${satker}_${i}`).get()
+                        .then(doc => doc.exists ? doc.data().items : [])
+                        .catch(() => [])
+                );
+            }
+            Promise.all(promises).then(chunks => {
+                allAssets[satker] = chunks.flat();
+                if (satker === currentSatker) {
+                    currentAssets = allAssets[currentSatker] || [];
+                    updateStats(); renderRecentList(); renderUnverifiedList();
+                }
+                updateSyncStatus('synced');
+            });
         }, (err) => {
-            console.error('Firestore assets listener error:', satker, err);
+            console.error('Firestore meta listener error:', satker, err);
             updateSyncStatus('error');
         });
         
-        // Verifications listener
+        // Verifications: single doc (small data)
         firebaseDb.collection('verifications').doc(satker).onSnapshot((doc) => {
             if (doc.exists) {
                 verifications[satker] = doc.data().items || [];
@@ -76,13 +104,10 @@ function listenToFirebase() {
                 verifications[satker] = [];
             }
             if (satker === currentSatker) {
-                updateStats();
-                renderRecentList();
-                renderUnverifiedList();
+                updateStats(); renderRecentList(); renderUnverifiedList();
             }
         }, (err) => {
             console.error('Firestore verifications listener error:', satker, err);
-            updateSyncStatus('error');
         });
     });
 }
@@ -91,37 +116,67 @@ function pushToFirebase() {
     if (!firebaseDb || !isOnline || !currentSatker) return;
     updateSyncStatus('syncing');
     
-    // Push ONLY current satker (not all at once)
     const satkerAssets = allAssets[currentSatker] || [];
     const satkerVerifs = verifications[currentSatker] || [];
+    const chunks = chunkArray(satkerAssets, CHUNK_SIZE);
     
-    firebaseDb.collection('assets').doc(currentSatker).set({ items: satkerAssets })
-        .then(() => {
-            return firebaseDb.collection('verifications').doc(currentSatker).set({ items: satkerVerifs });
-        })
-        .then(() => {
-            updateSyncStatus('synced');
-        })
-        .catch(err => {
-            console.error('Firestore push error:', err);
-            updateSyncStatus('error');
-        });
+    // Delete old chunk docs that are no longer needed
+    const metaRef = firebaseDb.collection('assets').doc(currentSatker + '_meta');
+    metaRef.get().then(metaDoc => {
+        const oldCount = metaDoc.exists ? (metaDoc.data().chunkCount || 0) : 0;
+        const deletePromises = [];
+        for (let i = chunks.length; i < oldCount; i++) {
+            deletePromises.push(
+                firebaseDb.collection('assets').doc(`${currentSatker}_${i}`).delete().catch(() => null)
+            );
+        }
+        return Promise.all(deletePromises);
+    }).then(() => {
+        // Write new chunks
+        const writePromises = chunks.map((chunk, i) =>
+            firebaseDb.collection('assets').doc(`${currentSatker}_${i}`).set({ items: chunk })
+        );
+        writePromises.push(metaRef.set({ chunkCount: chunks.length }));
+        writePromises.push(
+            firebaseDb.collection('verifications').doc(currentSatker).set({ items: satkerVerifs })
+        );
+        return Promise.all(writePromises);
+    }).then(() => {
+        updateSyncStatus('synced');
+    }).catch(err => {
+        console.error('Firestore push error:', err);
+        updateSyncStatus('error');
+    });
 }
 
 function syncFromFirebase() {
-    if (!firebaseDb) return;
+    if (!firebaseDb || !currentSatker) return;
     updateSyncStatus('syncing');
     
-    // Fetch current satker only
-    firebaseDb.collection('assets').doc(currentSatker).get()
-        .then((assetsDoc) => {
-            if (assetsDoc.exists) {
-                allAssets[currentSatker] = assetsDoc.data().items || [];
+    // Read meta for chunk count
+    firebaseDb.collection('assets').doc(currentSatker + '_meta').get()
+        .then((metaDoc) => {
+            const chunkCount = metaDoc.exists ? (metaDoc.data().chunkCount || 0) : 0;
+            if (chunkCount === 0) {
+                allAssets[currentSatker] = [];
+                return firebaseDb.collection('verifications').doc(currentSatker).get();
             }
-            return firebaseDb.collection('verifications').doc(currentSatker).get();
+            // Fetch all chunks
+            const promises = [];
+            for (let i = 0; i < chunkCount; i++) {
+                promises.push(
+                    firebaseDb.collection('assets').doc(`${currentSatker}_${i}`).get()
+                        .then(doc => doc.exists ? doc.data().items : [])
+                        .catch(() => [])
+                );
+            }
+            return Promise.all(promises).then(chunks => {
+                allAssets[currentSatker] = chunks.flat();
+                return firebaseDb.collection('verifications').doc(currentSatker).get();
+            });
         })
         .then((verifDoc) => {
-            if (verifDoc.exists) {
+            if (verifDoc && verifDoc.exists) {
                 verifications[currentSatker] = verifDoc.data().items || [];
             }
             currentAssets = allAssets[currentSatker] || [];
