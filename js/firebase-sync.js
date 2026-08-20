@@ -169,7 +169,10 @@ function syncFromFirebase(satker) {
         })
         .then((verifDoc) => {
             if (verifDoc && verifDoc.exists) {
-                verifications[syncSatker] = verifDoc.data().items || [];
+                const remoteVerifs = verifDoc.data().items || [];
+                const localVerifs = verifications[syncSatker] || [];
+                // MERGE instead of replace — local verifications (with foto) survive
+                verifications[syncSatker] = mergeVerifications(localVerifs, remoteVerifs);
             }
             // Only update UI if this is the active satker
             if (syncSatker === currentSatker) {
@@ -216,7 +219,10 @@ function forceLoadFromFirestore(satker) {
         })
         .then((verifDoc) => {
             if (verifDoc && verifDoc.exists) {
-                verifications[loadSatker] = verifDoc.data().items || [];
+                const remoteVerifs = verifDoc.data().items || [];
+                const localVerifs = verifications[loadSatker] || [];
+                // MERGE instead of replace — local verifications (with foto) survive
+                verifications[loadSatker] = mergeVerifications(localVerifs, remoteVerifs);
             }
             // Only update UI if this is still the active satker
             if (loadSatker === currentSatker) {
