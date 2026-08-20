@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Generate PNG Icons</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 40px; background: #1e293b; color: #fff; }
+        canvas { border: 1px solid #333; margin: 20px; }
+        .download-btn { display: inline-block; margin: 10px; padding: 12px 24px; background: #2563eb; color: white; text-decoration: none; border-radius: 8px; font-size: 16px; cursor: pointer; border: none; }
+        .download-btn:hover { background: #1d4ed8; }
+        h1 { color: #2563eb; }
+        p { color: #94a3b8; }
+    </style>
+</head>
+<body>
+    <h1>📦 Generate PNG Icons</h1>
+    <p>Klik tombol di bawah untuk generate & download PNG icons</p>
+    <div id="output"></div>
+
+    <script>
+    function generateIcon(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        const r = size * 0.167; // border radius
+
+        // Background
+        ctx.fillStyle = '#2563eb';
+        ctx.beginPath();
+        ctx.roundRect(0, 0, size, size, r);
+        ctx.fill();
+
+        // Text "VERIF"
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `bold ${size * 0.22}px Arial, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('VERIF', size / 2, size * 0.35);
+
+        // Text "aset"
+        ctx.fillText('aset', size / 2, size * 0.50);
+
+        // Divider line
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.beginPath();
+        ctx.roundRect(size * 0.25, size * 0.60, size * 0.5, size * 0.02, size * 0.01);
+        ctx.fill();
+
+        // Text "BMN"
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.font = `bold ${size * 0.16}px Arial, sans-serif`;
+        ctx.fillText('BMN', size / 2, size * 0.73);
+
+        return canvas;
+    }
+
+    function downloadCanvas(canvas, filename) {
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+
+    // Generate icons
+    const icon192 = generateIcon(192);
+    const icon512 = generateIcon(512);
+
+    // Show previews
+    const output = document.getElementById('output');
+
+    const preview192 = document.createElement('div');
+    preview192.innerHTML = `
+        <h3>192x192</h3>
+        <canvas id="c192" width="192" height="192"></canvas><br>
+        <button class="download-btn" onclick="downloadCanvas(icon192, 'icon-192.png')">⬇ Download icon-192.png</button>
+    `;
+    output.appendChild(preview192);
+    document.getElementById('c192').getContext('2d').drawImage(icon192, 0, 0);
+
+    const preview512 = document.createElement('div');
+    preview512.innerHTML = `
+        <h3>512x512</h3>
+        <canvas id="c512" width="256" height="256" style="width:256px;height:256px"></canvas><br>
+        <button class="download-btn" onclick="downloadCanvas(icon512, 'icon-512.png')">⬇ Download icon-512.png</button>
+    `;
+    output.appendChild(preview512);
+    document.getElementById('c512').getContext('2d').drawImage(icon512, 0, 0, 256, 256);
+
+    // Download all button
+    const dlAll = document.createElement('div');
+    dlAll.innerHTML = `<br><button class="download-btn" style="background:#16a34a;font-size:20px;padding:16px 32px" onclick="downloadCanvas(icon192,'icon-192.png');setTimeout(()=>downloadCanvas(icon512,'icon-512.png'),500)">⬇ Download Semua</button>`;
+    output.appendChild(dlAll);
+    </script>
+</body>
+</html>

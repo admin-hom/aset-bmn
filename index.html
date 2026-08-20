@@ -7,13 +7,33 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Aset BMN">
-    <link rel="apple-touch-icon" href="icon-192.svg">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <title>Verifikasi Aset BMN</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
+
+    <!-- Splash Screen -->
+    <div id="splashScreen" class="splash-screen">
+        <div class="splash-content">
+            <div class="splash-logo">
+                <svg viewBox="0 0 100 100" width="80" height="80">
+                    <rect width="100" height="100" rx="20" fill="#2563eb"/>
+                    <text x="50" y="38" font-size="14" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-weight="bold">VERIF</text>
+                    <text x="50" y="55" font-size="14" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-weight="bold">aset</text>
+                    <line x1="25" y1="63" x2="75" y2="63" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
+                    <text x="50" y="80" font-size="11" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="Arial,sans-serif">BMN</text>
+                </svg>
+            </div>
+            <h1 class="splash-title">Verifikasi Aset BMN</h1>
+            <p class="splash-sub">Kementerian Agama RI</p>
+            <div class="splash-loader">
+                <div class="splash-spinner"></div>
+            </div>
+        </div>
+    </div>
 
     <!-- ===== SCREEN 1: PILIH SATKER ===== -->
     <section id="screen-satker" class="screen active">

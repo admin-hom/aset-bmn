@@ -154,7 +154,18 @@ document.addEventListener('DOMContentLoaded', () => {
     renderSyncIndicator();
     registerServiceWorker();
     setupInstallPrompt();
+    hideSplashScreen();
 });
+
+// ===== SPLASH SCREEN =====
+function hideSplashScreen() {
+    const splash = document.getElementById('splashScreen');
+    if (!splash) return;
+    setTimeout(() => {
+        splash.classList.add('hidden');
+        setTimeout(() => splash.remove(), 500);
+    }, 1200);
+}
 
 // ===== SERVICE WORKER =====
 function registerServiceWorker() {
@@ -239,6 +250,35 @@ function dismissInstall() {
     localStorage.setItem('installDismissed', 'true');
     const banner = document.getElementById('installBanner');
     if (banner) banner.classList.add('hidden');
+}
+
+// ===== PUSH NOTIFICATIONS =====
+function requestNotificationPermission() {
+    if (!('Notification' in window)) return Promise.resolve('denied');
+    if (Notification.permission === 'granted') return Promise.resolve('granted');
+    if (Notification.permission === 'denied') return Promise.resolve('denied');
+    return Notification.requestPermission();
+}
+
+function sendSyncNotification(assetName) {
+    // Request permission on first verification
+    requestNotificationPermission().then(permission => {
+        if (permission !== 'granted') return;
+
+        try {
+            const notif = new Notification('Terverifikasi ✓', {
+                body: `${assetName} berhasil diverifikasi & disync ke cloud`,
+                icon: 'icon-192.svg',
+                badge: 'icon-192.svg',
+                tag: 'verify-' + Date.now(),
+                silent: true
+            });
+            setTimeout(() => notif.close(), 3000);
+        } catch (e) {
+            // iOS Safari doesn't support new Notification() in some contexts
+            console.log('Notification not supported:', e);
+        }
+    });
 }
 
 // ===== DATA MANAGEMENT =====
@@ -481,6 +521,7 @@ function saveVerification() {
     renderRecentList();
 
     showSuccessModal('Verifikasi berhasil disimpan!');
+    sendSyncNotification(currentAsset.namaBarang || currentAsset.kodeBarang);
 }
 
 // ===== UPDATE STATS =====
