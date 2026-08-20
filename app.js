@@ -143,14 +143,19 @@ function renderAssetDetail(asset) {
             </div>
         </div>
         ${existingVerification ? `
-            <div style="margin-top: 16px; padding: 12px; background: var(--success-light); border-radius: 8px; border: 1px solid var(--success);">
-                <strong style="color: #065f46; font-size: 0.85rem;">
-                    <i class="fas fa-check-circle"></i> Sudah Diverifikasi
-                </strong>
-                <p style="font-size: 0.8rem; color: #065f46; margin-top: 4px;">
-                    Lokasi: ${escapeHtml(existingVerification.lokasi || '-')} | 
-                    Kondisi: ${escapeHtml(existingVerification.kondisiAktual || '-')}
-                </p>
+            <div class="verified-banner">
+                <div class="verified-info">
+                    <strong><i class="fas fa-check-circle"></i> Sudah Diverifikasi</strong>
+                    <p>Lokasi: ${escapeHtml(existingVerification.lokasi || '-')} | Kondisi: ${escapeHtml(existingVerification.kondisiAktual || '-')}</p>
+                </div>
+                <div class="verified-actions">
+                    <button class="btn btn-sm btn-primary" onclick="editVerification()">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteVerification()">
+                        <i class="fas fa-trash"></i> Hapus
+                    </button>
+                </div>
             </div>
         ` : ''}
     `;
@@ -174,6 +179,36 @@ function renderAssetDetail(asset) {
 
     // Update location autocomplete
     updateLocationAutocomplete();
+}
+
+// ===== EDIT / DELETE VERIFICATION =====
+function editVerification() {
+    if (!currentAsset) return;
+    showToast('Edit mode - ubah data lalu klik Simpan Verifikasi', 'info');
+    // Scroll to form
+    const form = document.getElementById('verifyForm');
+    if (form) form.scrollIntoView({ behavior: 'smooth' });
+}
+
+function deleteVerification() {
+    if (!currentAsset) return;
+
+    document.getElementById('modalTitle').textContent = 'Hapus Verifikasi?';
+    document.getElementById('modalMessage').textContent = `Verifikasi untuk \"${currentAsset.namaBarang || currentAsset.kodeBarang}\" akan dihapus.`;
+    document.getElementById('modalConfirm').onclick = () => {
+        verifications[currentSatker] = (verifications[currentSatker] || []).filter(v =>
+            !(v.kodeBarang === currentAsset.kodeBarang && v.nup === currentAsset.nup)
+        );
+        saveData();
+        updateStats();
+        renderRecentList();
+        renderUnverifiedList();
+        closeModal();
+        showToast('Verifikasi berhasil dihapus!', 'info');
+        // Re-render detail to remove verification banner
+        renderAssetDetail(currentAsset);
+    };
+    document.getElementById('confirmModal').classList.add('show');
 }
 
 // ===== SAVE VERIFICATION =====

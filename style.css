@@ -655,6 +655,38 @@ body {
     grid-column: 1 / -1;
 }
 
+/* ===== VERIFIED BANNER ===== */
+.verified-banner {
+    margin-top: 16px;
+    padding: 14px;
+    background: var(--success-light);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--success);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.verified-banner .verified-info strong {
+    display: block;
+    color: #065f46;
+    font-size: 0.85rem;
+}
+
+.verified-banner .verified-info p {
+    font-size: 0.8rem;
+    color: #065f46;
+    margin-top: 4px;
+}
+
+.verified-banner .verified-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
 /* ===== VERIFY FORM ===== */
 .verify-form {
     background: var(--surface);
