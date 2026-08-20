@@ -1113,6 +1113,8 @@ function processExcelFile(file) {
             saveData();
             updateStats();
             renderRecentList();
+            renderUnverifiedList();
+            renderSyncIndicator();
 
             showImportProgress(false);
 
