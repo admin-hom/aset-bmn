@@ -369,6 +369,50 @@ function selectSatker(satker) {
     updateStats();
     renderRecentList();
     renderUnverifiedList();
+    // Force fetch from Firestore in case listener hasn't loaded yet
+    forceLoadFromFirestore(satker);
+}
+
+function forceLoadFromFirestore(satker) {
+    if (!firebaseDb) return;
+    updateSyncStatus('syncing');
+    
+    // Read meta for chunk count
+    firebaseDb.collection('assets').doc(satker + '_meta').get()
+        .then((metaDoc) => {
+            const chunkCount = metaDoc.exists ? (metaDoc.data().chunkCount || 0) : 0;
+            if (chunkCount === 0) {
+                allAssets[satker] = [];
+                return firebaseDb.collection('verifications').doc(satker).get();
+            }
+            const promises = [];
+            for (let i = 0; i < chunkCount; i++) {
+                promises.push(
+                    firebaseDb.collection('assets').doc(`${satker}_${i}`).get()
+                        .then(doc => doc.exists ? doc.data().items : [])
+                        .catch(() => [])
+                );
+            }
+            return Promise.all(promises).then(chunks => {
+                allAssets[satker] = chunks.flat();
+                return firebaseDb.collection('verifications').doc(satker).get();
+            });
+        })
+        .then((verifDoc) => {
+            if (verifDoc && verifDoc.exists) {
+                verifications[satker] = verifDoc.data().items || [];
+            }
+            currentAssets = allAssets[satker] || [];
+            saveData();
+            updateStats();
+            renderRecentList();
+            renderUnverifiedList();
+            updateSyncStatus('synced');
+        })
+        .catch(err => {
+            console.error('Force load error:', err);
+            updateSyncStatus('error');
+        });
 }
 
 function goBack() {
