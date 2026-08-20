@@ -418,74 +418,93 @@ function processExcelFile(file) {
         return;
     }
 
+    // Check if XLSX library is loaded
+    if (typeof XLSX === 'undefined') {
+        showToast('Library Excel belum ke-load! Refresh halaman.', 'error');
+        return;
+    }
+
     showImportProgress(true, 'Membaca file Excel...');
 
     const reader = new FileReader();
     reader.onload = (e) => {
         try {
             const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            console.log('File size:', data.length, 'bytes');
 
-            // Read as raw array to handle merged cells & title rows
-            const rawRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
-            console.log('Total raw rows:', rawRows.length);
-
-            if (rawRows.length === 0) {
+            if (data.length < 100) {
                 showImportProgress(false);
-                showToast('File Excel kosong!', 'error');
+                showToast('File terlalu kecil atau corrupt!', 'error');
                 return;
             }
 
-            // Find header row: scan first 20 rows for row containing 'Kode Barang' or 'NUP'
-            let headerRowIndex = -1;
-            const headerKeywords = ['kode barang', 'kode_barang', 'nup', 'nama barang', 'no urut'];
-            for (let r = 0; r < Math.min(20, rawRows.length); r++) {
-                const rowStr = rawRows[r].map(c => String(c || '').toLowerCase().trim()).join('||');
-                const hasKeyword = headerKeywords.some(kw => rowStr.includes(kw));
-                if (hasKeyword) {
-                    headerRowIndex = r;
-                    break;
+            const workbook = XLSX.read(data, { type: 'array' });
+            console.log('Sheets:', workbook.SheetNames);
+
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            console.log('Sheet range:', firstSheet['!ref']);
+
+            // APPROACH 1: Read as raw array (header:1)
+            let rawRows = [];
+            try {
+                rawRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+            } catch(e1) { console.log('Raw approach error:', e1); }
+            console.log('Approach 1 (raw):', rawRows.length, 'rows');
+
+            // APPROACH 2: Read as JSON
+            let jsonData = [];
+            try {
+                jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+            } catch(e2) { console.log('JSON approach error:', e2); }
+            console.log('Approach 2 (JSON):', jsonData.length, 'rows');
+
+            // Pick the approach that returned data
+            let finalData = [];
+
+            if (jsonData.length > 0) {
+                // JSON approach worked - use it directly
+                finalData = jsonData;
+                console.log('Using JSON approach. Columns:', Object.keys(jsonData[0] || {}));
+            } else if (rawRows.length > 0) {
+                // Raw approach - scan for header row
+                console.log('Using raw approach, scanning header...');
+                const keywords = ['kode barang', 'kode_barang', 'nup', 'nama barang', 'no urut', 'keterangan'];
+                let headerIdx = -1;
+                for (let r = 0; r < Math.min(30, rawRows.length); r++) {
+                    const joined = rawRows[r].map(c => String(c||'').toLowerCase().trim()).join('||');
+                    if (keywords.some(kw => joined.includes(kw))) {
+                        headerIdx = r;
+                        break;
+                    }
+                }
+                if (headerIdx >= 0) {
+                    const hdrs = rawRows[headerIdx].map(h => String(h||'').trim());
+                    for (let r = headerIdx + 1; r < rawRows.length; r++) {
+                        const row = rawRows[r];
+                        if (!row.some(c => c !== '' && c != null)) continue;
+                        const obj = {};
+                        hdrs.forEach((h, ci) => { if (h) obj[h] = row[ci] || ''; });
+                        finalData.push(obj);
+                    }
                 }
             }
 
-            if (headerRowIndex === -1) {
+            if (finalData.length === 0) {
                 showImportProgress(false);
-                showToast('Kolom Kode Barang/NUP tidak ditemukan! Cek format Excel.', 'error');
+                const debug = rawRows.slice(0,3).map((r,i) => `R${i}:${JSON.stringify(r.slice(0,4))}`).join(' | ');
+                showToast(`Gagal baca! Ref:${firstSheet['!ref']} Raw:${rawRows.length} JSON:${jsonData.length} | ${debug}`, 'error');
                 return;
             }
 
-            console.log('Header found at row:', headerRowIndex);
-            const headers = rawRows[headerRowIndex].map(h => String(h || '').trim());
-            console.log('Headers:', headers);
+            console.log('Final data rows:', finalData.length);
 
-            // Build jsonData from header row onwards
-            const jsonData = [];
-            for (let r = headerRowIndex + 1; r < rawRows.length; r++) {
-                const row = rawRows[r];
-                // Skip completely empty rows
-                const hasData = row.some(c => c !== '' && c !== null && c !== undefined);
-                if (!hasData) continue;
-
-                const obj = {};
-                headers.forEach((h, ci) => {
-                    if (h) obj[h] = row[ci] !== undefined ? row[ci] : '';
-                });
-                jsonData.push(obj);
-            }
-
-            console.log('Data rows found:', jsonData.length);
-            if (jsonData.length > 0) {
-                console.log('First row:', jsonData[0]);
-            }
-
-            showImportProgress(true, `Memproses ${jsonData.length} data...`);
+            showImportProgress(true, `Memproses ${finalData.length} data...`);
 
             // Map columns - much more flexible matching
             let imported = 0;
             const newAssets = [];
 
-            jsonData.forEach((row, i) => {
+            finalData.forEach((row, i) => {
                 // Very flexible column matching for SIMAN exports
                 const kodeBarang = findColumnValue(row, [
                     'Kode Barang', 'kode_barang', 'kodeBarang', 'KodeBarang', 'KODE BARANG',
@@ -563,17 +582,17 @@ function processExcelFile(file) {
             showImportProgress(false);
 
             if (imported === 0) {
-                showToast(`0 aset diimport. Header: ${headers.slice(0, 5).join(', ')}...`, 'error');
+                const keys = Object.keys(finalData[0] || {});
+                showToast(`0 aset! Kolom: ${keys.slice(0,6).join(', ')}`, 'error');
             } else {
                 showToast(`${imported} aset berhasil diimport!`, 'success');
             }
 
             // Clear input
-            document.getElementById('fileInput').value = '';
-
-        } catch (err) {
+            document.getElementById('fileInput').value = '';        } catch (err) {
             showImportProgress(false);
-            showToast(`Gagal import: ${err.message}`, 'error');
+            console.error('Import error:', err);
+            showToast(`Gagal: ${err.message}`, 'error');
         }
     };
     reader.readAsArrayBuffer(file);
