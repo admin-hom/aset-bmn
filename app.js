@@ -55,61 +55,9 @@ function chunkArray(arr, size) {
 }
 
 function listenToFirebase() {
-    if (!firebaseDb) return;
-    
-    // Listen to meta doc for chunk count, then listen to each chunk
-    Object.keys(SATKER_MAP).forEach(satker => {
-        // Assets: listen to meta (chunk count)
-        firebaseDb.collection('assets').doc(satker + '_meta').onSnapshot((metaDoc) => {
-            if (!metaDoc.exists) {
-                allAssets[satker] = [];
-                if (satker === currentSatker) {
-                    currentAssets = [];
-                    updateStats(); renderRecentList(); renderUnverifiedList();
-                }
-                return;
-            }
-            const chunkCount = metaDoc.data().chunkCount || 0;
-            if (chunkCount === 0) {
-                allAssets[satker] = [];
-                return;
-            }
-            // Fetch all chunks
-            const promises = [];
-            for (let i = 0; i < chunkCount; i++) {
-                promises.push(
-                    firebaseDb.collection('assets').doc(`${satker}_${i}`).get()
-                        .then(doc => doc.exists ? doc.data().items : [])
-                        .catch(() => [])
-                );
-            }
-            Promise.all(promises).then(chunks => {
-                allAssets[satker] = chunks.flat();
-                if (satker === currentSatker) {
-                    currentAssets = allAssets[currentSatker] || [];
-                    updateStats(); renderRecentList(); renderUnverifiedList();
-                }
-                updateSyncStatus('synced');
-            });
-        }, (err) => {
-            console.error('Firestore meta listener error:', satker, err);
-            updateSyncStatus('error');
-        });
-        
-        // Verifications: single doc (small data)
-        firebaseDb.collection('verifications').doc(satker).onSnapshot((doc) => {
-            if (doc.exists) {
-                verifications[satker] = doc.data().items || [];
-            } else {
-                verifications[satker] = [];
-            }
-            if (satker === currentSatker) {
-                updateStats(); renderRecentList(); renderUnverifiedList();
-            }
-        }, (err) => {
-            console.error('Firestore verifications listener error:', satker, err);
-        });
-    });
+    // No real-time listeners — use manual fetch in forceLoadFromFirestore()
+    // This avoids race conditions where onSnapshot overwrites fresh data
+    console.log('Firestore: ready (manual sync mode)');
 }
 
 function pushToFirebase() {
