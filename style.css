@@ -1854,3 +1854,63 @@ body.dark-mode select:focus {
         grid-template-columns: repeat(4, 1fr);
     }
 }
+
+/* ===== INSTALL BANNER ===== */
+.install-banner {
+    position: fixed;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 24px);
+    max-width: 480px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 12px 12px 12px 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    z-index: 999;
+    animation: slideUp 0.4s ease;
+}
+
+.install-banner.hidden {
+    display: none;
+}
+
+.install-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.install-banner-content > i {
+    font-size: 1.5rem;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.install-banner-text {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.install-banner-text strong {
+    font-size: 0.9rem;
+    color: var(--text);
+}
+
+.install-banner-text span {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.btn-close-install {
+    padding: 4px;
+    flex-shrink: 0;
+}
+
+@keyframes slideUp {
+    from { transform: translateX(-50%) translateY(100%); opacity: 0; }
+    to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}

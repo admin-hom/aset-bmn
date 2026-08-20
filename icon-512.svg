@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#2563eb"/>
+  <text x="256" y="200" font-size="42" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-weight="bold">VERIF</text>
+  <text x="256" y="270" font-size="42" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-weight="bold">aset</text>
+  <rect x="130" y="310" width="252" height="10" rx="5" fill="rgba(255,255,255,0.4)"/>
+  <text x="256" y="390" font-size="30" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="Arial,sans-serif">BMN</text>
+</svg>

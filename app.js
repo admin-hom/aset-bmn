@@ -152,7 +152,52 @@ document.addEventListener('DOMContentLoaded', () => {
     setupFormListeners();
     loadDarkMode();
     renderSyncIndicator();
+    setupInstallPrompt();
 });
+
+// ===== PWA INSTALL PROMPT =====
+let deferredPrompt = null;
+
+function setupInstallPrompt() {
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        // Show install banner if not dismissed
+        if (!localStorage.getItem('installDismissed')) {
+            const banner = document.getElementById('installBanner');
+            if (banner) banner.classList.remove('hidden');
+        }
+    });
+
+    window.addEventListener('appinstalled', () => {
+        deferredPrompt = null;
+        const banner = document.getElementById('installBanner');
+        if (banner) banner.classList.add('hidden');
+        showToast('Aplikasi berhasil diinstal!', 'success');
+    });
+}
+
+function installApp() {
+    if (!deferredPrompt) {
+        showToast('Buka di Chrome/Edge untuk install', 'info');
+        return;
+    }
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choice) => {
+        if (choice.outcome === 'accepted') {
+            showToast('Menginstal aplikasi...', 'info');
+        }
+        deferredPrompt = null;
+        const banner = document.getElementById('installBanner');
+        if (banner) banner.classList.add('hidden');
+    });
+}
+
+function dismissInstall() {
+    localStorage.setItem('installDismissed', 'true');
+    const banner = document.getElementById('installBanner');
+    if (banner) banner.classList.add('hidden');
+}
 
 // ===== DATA MANAGEMENT =====
 function loadData() {
