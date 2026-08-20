@@ -1212,8 +1212,12 @@ function processExcelFile(file) {
                 imported++;
             });
 
-            // Add to current satker
-            allAssets[currentSatker] = [...allAssets[currentSatker], ...newAssets];
+            // Merge with dedup (kodeBarang + nup)
+            const existing = allAssets[currentSatker] || [];
+            const existingMap = {};
+            existing.forEach(a => { existingMap[a.kodeBarang + '|' + a.nup] = a; });
+            newAssets.forEach(a => { existingMap[a.kodeBarang + '|' + a.nup] = a; });
+            allAssets[currentSatker] = Object.values(existingMap);
             currentAssets = allAssets[currentSatker];
             saveData();
             updateStats();
@@ -1227,7 +1231,8 @@ function processExcelFile(file) {
                 const keys = Object.keys(finalData[0] || {});
                 showToast(`0 aset! Kolom: ${keys.slice(0,6).join(', ')}`, 'error');
             } else {
-                showToast(`${imported} aset berhasil diimport!`, 'success');
+                const totalNow = allAssets[currentSatker].length;
+                showToast(`${imported} aset diproses! Total: ${totalNow} aset (auto-dedup)`, 'success');
             }
 
             // Clear input
