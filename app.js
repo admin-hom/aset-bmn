@@ -55,9 +55,41 @@ function chunkArray(arr, size) {
 }
 
 function listenToFirebase() {
-    // No real-time listeners — use manual fetch in forceLoadFromFirestore()
-    // This avoids race conditions where onSnapshot overwrites fresh data
-    console.log('Firestore: ready (manual sync mode)');
+    if (!firebaseDb) return;
+    
+    // Real-time listener for VERIFICATIONS only (small data)
+    Object.keys(SATKER_MAP).forEach(satker => {
+        firebaseDb.collection('verifications').doc(satker).onSnapshot((doc) => {
+            if (doc.exists) {
+                const newData = doc.data().items || [];
+                // Only update if data actually changed
+                const oldKey = JSON.stringify(verifications[satker] || []);
+                const newKey = JSON.stringify(newData);
+                if (oldKey !== newKey) {
+                    verifications[satker] = newData;
+                    if (satker === currentSatker) {
+                        updateStats(); renderRecentList(); renderUnverifiedList();
+                    }
+                }
+            }
+        }, (err) => {
+            console.error('Firestore verif listener error:', satker, err);
+        });
+    });
+    
+    // Assets: NO real-time listener (too large, use forceLoadFromFirestore)
+    console.log('Firestore: ready (verif=realtime, assets=manual)');
+    
+    // Cleanup old format documents
+    cleanupOldFirestoreDocs();
+}
+
+function cleanupOldFirestoreDocs() {
+    if (!firebaseDb) return;
+    // Delete old allVerifications document (old format)
+    firebaseDb.collection('verifications').doc('allVerifications').delete().catch(() => {});
+    // Delete old allAssets document (old format)
+    firebaseDb.collection('assets').doc('allAssets').delete().catch(() => {});
 }
 
 function pushToFirebase() {
