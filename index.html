@@ -6,6 +6,8 @@
     <meta name="theme-color" content="#1e293b">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Aset BMN">
+    <link rel="apple-touch-icon" href="icon-192.svg">
     <title>Verifikasi Aset BMN</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
@@ -538,7 +540,7 @@
             <i class="fas fa-mobile-alt"></i>
             <div class="install-banner-text">
                 <strong>Instal Aplikasi</strong>
-                <span>Tambahkan ke layar utama untuk akses cepat</span>
+                <span id="installHint">Tambahkan ke layar utama untuk akses cepat</span>
             </div>
             <button class="btn btn-primary btn-sm" id="btnInstall" onclick="installApp()">
                 <i class="fas fa-plus"></i> Instal
@@ -588,15 +590,5 @@
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="app.js"></script>
-    <script>
-        // Register Service Worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').then(reg => {
-                console.log('SW registered:', reg.scope);
-            }).catch(err => {
-                console.log('SW registration failed:', err);
-            });
-        }
-    </script>
 </body>
 </html>

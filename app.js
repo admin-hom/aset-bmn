@@ -152,21 +152,32 @@ document.addEventListener('DOMContentLoaded', () => {
     setupFormListeners();
     loadDarkMode();
     renderSyncIndicator();
+    registerServiceWorker();
     setupInstallPrompt();
 });
 
+// ===== SERVICE WORKER =====
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').then(reg => {
+            console.log('SW registered, scope:', reg.scope);
+        }).catch(err => {
+            console.log('SW registration failed:', err);
+        });
+    }
+}
+
 // ===== PWA INSTALL PROMPT =====
 let deferredPrompt = null;
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
 function setupInstallPrompt() {
+    // Android/Chrome - beforeinstallprompt event
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        // Show install banner if not dismissed
-        if (!localStorage.getItem('installDismissed')) {
-            const banner = document.getElementById('installBanner');
-            if (banner) banner.classList.remove('hidden');
-        }
+        showInstallBanner();
     });
 
     window.addEventListener('appinstalled', () => {
@@ -175,13 +186,44 @@ function setupInstallPrompt() {
         if (banner) banner.classList.add('hidden');
         showToast('Aplikasi berhasil diinstal!', 'success');
     });
+
+    // iOS - show banner with manual instructions (no beforeinstallprompt)
+    if (isIOS && !isStandalone && !localStorage.getItem('installDismissed')) {
+        showInstallBanner();
+    }
+}
+
+function showInstallBanner() {
+    if (localStorage.getItem('installDismissed')) return;
+    if (isStandalone) return; // Already installed
+    
+    const banner = document.getElementById('installBanner');
+    const hint = document.getElementById('installHint');
+    const btn = document.getElementById('btnInstall');
+    
+    if (!banner) return;
+    
+    if (isIOS) {
+        // iOS: show manual instructions
+        if (hint) hint.textContent = 'Tap \u203c bagikan\u203e lalu \u201cTambahkan ke Layar Utama\u201d';
+        if (btn) btn.innerHTML = '<i class="fas fa-arrow-up"></i> Share';
+    }
+    
+    banner.classList.remove('hidden');
 }
 
 function installApp() {
-    if (!deferredPrompt) {
-        showToast('Buka di Chrome/Edge untuk install', 'info');
+    if (isIOS) {
+        // iOS: show step-by-step toast instructions
+        showToast('Tap tombol Share (\u2212) di bawah, lalu pilih \u201cTambahkan ke Layar Utama\u201d', 'info');
         return;
     }
+    
+    if (!deferredPrompt) {
+        showToast('Buka di Chrome/Edge Android untuk install otomatis', 'info');
+        return;
+    }
+    
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then((choice) => {
         if (choice.outcome === 'accepted') {

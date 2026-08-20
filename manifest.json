@@ -10,6 +10,7 @@
     "orientation": "portrait",
     "scope": "/aset-bmn/",
     "categories": ["business", "utilities"],
+    "prefer_related_applications": false,
     "icons": [
         {
             "src": "icon-192.svg",
