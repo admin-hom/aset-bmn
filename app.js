@@ -40,7 +40,7 @@ function selectSatker(satker) {
     currentSatker = satker;
     currentAssets = allAssets[satker] || [];
     document.getElementById('headerSatkerName').textContent = SATKER_MAP[satker];
-    showPage('home');
+    showPage('dashboard');
     updateStats();
     renderRecentList();
 }
