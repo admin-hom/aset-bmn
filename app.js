@@ -329,6 +329,57 @@ function renderKondisiStats() {
 }
 
 // ===== RENDER RECENT LIST =====
+// ===== SEARCH BY NAME =====
+function searchByName() {
+    const input = document.getElementById('inputSearchName');
+    const container = document.getElementById('searchNameResults');
+    if (!input || !container) return;
+
+    const query = input.value.trim().toLowerCase();
+
+    if (query.length < 2) {
+        container.classList.add('hidden');
+        container.innerHTML = '';
+        return;
+    }
+
+    const verifiedSet = new Set(
+        (verifications[currentSatker] || []).map(v => v.kodeBarang + '|' + v.nup)
+    );
+
+    const results = currentAssets.filter(a => {
+        const haystack = [a.namaBarang, a.merk, a.tipe, a.kodeBarang, a.nup, a.jenisBMN]
+            .join(' ').toLowerCase();
+        return haystack.includes(query);
+    }).slice(0, 20);
+
+    container.classList.remove('hidden');
+
+    if (results.length === 0) {
+        container.innerHTML = `<div class="snr-empty">Tidak ditemukan untuk \"${escapeHtml(input.value.trim())}\"</div>`;
+        return;
+    }
+
+    container.innerHTML = results.map(a => {
+        const isVerified = verifiedSet.has(a.kodeBarang + '|' + a.nup);
+        const badgeClass = isVerified ? 'verified' : 'unverified';
+        const badgeText = isVerified ? '✓ Verified' : 'Belum';
+
+        return `
+            <div class="snr-item" onclick="goVerifyAsset('${escapeHtml(a.kodeBarang)}', '${escapeHtml(a.nup)}')">
+                <div class="snr-icon">
+                    <i class="fas fa-box-open"></i>
+                </div>
+                <div class="snr-info">
+                    <div class="snr-name">${escapeHtml(a.namaBarang || 'Tanpa Nama')}</div>
+                    <div class="snr-detail">${escapeHtml(a.merk || '')} ${escapeHtml(a.tipe || '')} | KB: ${escapeHtml(a.kodeBarang)} | NUP: ${escapeHtml(a.nup)}</div>
+                </div>
+                <span class="snr-badge ${badgeClass}">${badgeText}</span>
+            </div>
+        `;
+    }).join('');
+}
+
 let unverifiedShowCount = 10;
 
 function renderUnverifiedList() {
