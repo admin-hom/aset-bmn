@@ -2,12 +2,13 @@
     "name": "Verifikasi Aset BMN",
     "short_name": "Aset BMN",
     "description": "Aplikasi Verifikasi Aset Barang Milik Negara - Kementerian Agama RI",
-    "start_url": "index.html",
+    "id": "/aset-bmn/",
+    "start_url": "/aset-bmn/index.html",
     "display": "standalone",
     "background_color": "#1e293b",
     "theme_color": "#2563eb",
     "orientation": "portrait",
-    "scope": ".",
+    "scope": "/aset-bmn/",
     "categories": ["business", "utilities"],
     "icons": [
         {
