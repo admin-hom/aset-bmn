@@ -269,9 +269,12 @@ function updateStats() {
     const verified = verifications[currentSatker]?.length || 0;
     const unverified = total - verified;
 
-    document.getElementById('statTotal').textContent = total;
-    document.getElementById('statVerified').textContent = verified;
-    document.getElementById('statUnverified').textContent = unverified > 0 ? unverified : 0;
+    const statTotal = document.getElementById('statTotal');
+    const statVerified = document.getElementById('statVerified');
+    const statUnverified = document.getElementById('statUnverified');
+    if (statTotal) statTotal.textContent = total;
+    if (statVerified) statVerified.textContent = verified;
+    if (statUnverified) statUnverified.textContent = unverified > 0 ? unverified : 0;
 
     const dashTotal = document.getElementById('dashTotal');
     const dashVerified = document.getElementById('dashVerified');
