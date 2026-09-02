@@ -116,6 +116,32 @@ function processExcelFile(file) {
                 return;
             }
 
+            // ===== SATKER FILTER: auto-filter if Excel has a satker column =====
+            if (finalData.length > 0 && currentSatker) {
+                const cols = Object.keys(finalData[0]);
+                const satkerCol = cols.find(c => c.toLowerCase().includes('satker'));
+                if (satkerCol) {
+                    const satkerPatterns = {
+                        sekretariat: ['sekretariat', 'sekjen', 'sekretariat jendral', 'sekretariat jenderal'],
+                        pendidikan: ['pendidikan', 'pendis', 'pendidikan islam'],
+                        bimas: ['bimas', 'bimbingan masyarakat', 'bimbingan masyarakat islam']
+                    };
+                    const patterns = satkerPatterns[currentSatker] || [currentSatker];
+                    const beforeCount = finalData.length;
+                    finalData = finalData.filter(row => {
+                        const val = String(row[satkerCol] || '').trim().toLowerCase();
+                        return patterns.some(p => val.includes(p));
+                    });
+                    console.log(`Satker filter (${satkerCol}): ${beforeCount} → ${finalData.length} rows for '${currentSatker}'`);
+                }
+            }
+
+            if (finalData.length === 0) {
+                showImportProgress(false);
+                showToast(`Tidak ada data untuk satker ${SATKER_MAP[currentSatker] || currentSatker} di file ini.`, 'error');
+                return;
+            }
+
             console.log(`Final: ${finalData.length} rows from sheet '${usedSheet}'`);
             showImportProgress(true, `Memproses ${finalData.length} data...`);
 
