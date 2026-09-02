@@ -1,0 +1,67 @@
+<div id="page-dashboard" class="page active">
+    <div class="detail-header">
+        <button class="btn-icon" onclick="showPage('home')">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h2>Dashboard</h2>
+    </div>
+
+    <div class="dashboard-stats">
+        <div class="dash-stat-card blue">
+            <i class="fas fa-boxes-stacked"></i>
+            <div>
+                <span class="dash-num" id="dashTotal">0</span>
+                <span class="dash-label">Total Aset</span>
+            </div>
+        </div>
+        <div class="dash-stat-card green">
+            <i class="fas fa-check-circle"></i>
+            <div>
+                <span class="dash-num" id="dashVerified">0</span>
+                <span class="dash-label">Terverifikasi</span>
+            </div>
+        </div>
+        <div class="dash-stat-card orange">
+            <i class="fas fa-clock"></i>
+            <div>
+                <span class="dash-num" id="dashUnverified">0</span>
+                <span class="dash-label">Belum Diverifikasi</span>
+            </div>
+        </div>
+        <div class="dash-stat-card red">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+                <span class="dash-num" id="dashProblem">0</span>
+                <span class="dash-label">Rusak/Bermasalah</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-section">
+        <div class="progress-header">
+            <span>Progress Verifikasi</span>
+            <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <!-- List per Kondisi -->
+    <div class="dash-section">
+        <h3><i class="fas fa-heartbeat"></i> Berdasarkan Kondisi</h3>
+        <div id="kondisiStats" class="kondisi-stats"></div>
+    </div>
+
+    <!-- Export -->
+    <div class="dash-section">
+        <h3><i class="fas fa-download"></i> Export Data</h3>
+        <button class="btn btn-success btn-full" onclick="exportExcel()">
+            <i class="fas fa-file-excel"></i> Export ke Excel (Semua Data)
+        </button>
+        <button class="btn btn-primary btn-full" onclick="exportPDF()" style="margin-top: 8px;">
+            <i class="fas fa-file-pdf"></i> Export ke PDF (dengan Foto)
+        </button>
+    </div>
+</div>

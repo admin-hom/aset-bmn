@@ -1,5 +1,5 @@
 // ===== Service Worker for PWA =====
-const CACHE_NAME = 'aset-bmn-v4';
+const CACHE_NAME = 'aset-bmn-v5';
 const BASE = '/aset-bmn/';
 const ASSETS = [
     BASE,
@@ -12,6 +12,23 @@ const ASSETS = [
     BASE + 'icon-192.svg',
     BASE + 'icon-512.svg',
     BASE + 'firebase-config.js',
+    // JS modules
+    BASE + 'js/shared.js',
+    BASE + 'js/firebase-sync.js',
+    BASE + 'js/asset.js',
+    BASE + 'js/verification.js',
+    BASE + 'js/photo.js',
+    BASE + 'js/import-export.js',
+    // Page templates
+    BASE + 'pages/satker.html',
+    BASE + 'pages/home.html',
+    BASE + 'pages/detail.html',
+    BASE + 'pages/dashboard.html',
+    BASE + 'pages/import.html',
+    BASE + 'pages/settings.html',
+    BASE + 'pages/history.html',
+    BASE + 'pages/admin.html',
+    // External CDN
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
     'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',

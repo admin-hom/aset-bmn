@@ -1,0 +1,83 @@
+<div id="page-detail" class="page active">
+    <div class="detail-header">
+        <button class="btn-icon" onclick="showPage('home')">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h2>Detail Aset</h2>
+    </div>
+
+    <div id="assetDetail" class="asset-detail-card">
+        <!-- Will be filled by JS -->
+    </div>
+
+    <!-- Form Verifikasi -->
+    <div id="verifyForm" class="verify-form">
+        <h3><i class="fas fa-clipboard-check"></i> Form Verifikasi</h3>
+
+        <div class="input-group">
+            <label><i class="fas fa-map-marker-alt"></i> Lokasi Ruangan *</label>
+            <input type="text" id="inputLokasi" placeholder="Contoh: Lt.2 R.201" list="lokasiHistory" autocomplete="off">
+            <datalist id="lokasiHistory"></datalist>
+            <small class="text-muted">Ketik untuk melihat rekomendasi lokasi sebelumnya</small>
+        </div>
+
+        <div class="input-group">
+            <label><i class="fas fa-heartbeat"></i> Kondisi Aktual *</label>
+            <div class="radio-group">
+                <label class="radio-card">
+                    <input type="radio" name="kondisi" value="Baik">
+                    <div class="radio-content good">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Baik</span>
+                    </div>
+                </label>
+                <label class="radio-card">
+                    <input type="radio" name="kondisi" value="Rusak Ringan">
+                    <div class="radio-content warning">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Rusak Ringan</span>
+                    </div>
+                </label>
+                <label class="radio-card">
+                    <input type="radio" name="kondisi" value="Rusak Berat">
+                    <div class="radio-content danger">
+                        <i class="fas fa-times-circle"></i>
+                        <span>Rusak Berat</span>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label><i class="fas fa-camera"></i> Foto Aset</label>
+            <div class="photo-section">
+                <div id="photoPreview" class="photo-preview" onclick="showPhotoOptions()">
+                    <i class="fas fa-camera"></i>
+                    <span>Ketik untuk ambil foto</span>
+                </div>
+                <input type="file" id="inputFoto" accept="image/*" capture="environment" class="hidden" onchange="handlePhoto(event)">
+                <input type="file" id="inputFotoGallery" accept="image/*" class="hidden" onchange="handlePhoto(event)">
+                <div id="photoActions" class="photo-actions hidden">
+                    <button type="button" class="btn btn-sm btn-primary" onclick="triggerCamera()">
+                        <i class="fas fa-camera"></i> Kamera
+                    </button>
+                    <button type="button" class="btn btn-sm btn-info" onclick="triggerGallery()">
+                        <i class="fas fa-images"></i> Galeri
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removePhoto()">
+                        <i class="fas fa-trash"></i> Hapus
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label><i class="fas fa-sticky-note"></i> Catatan</label>
+            <textarea id="inputCatatan" rows="3" placeholder="Catatan tambahan (opsional)"></textarea>
+        </div>
+
+        <button class="btn btn-success btn-full" onclick="saveVerification()">
+            <i class="fas fa-save"></i> Simpan Verifikasi
+        </button>
+    </div>
+</div>

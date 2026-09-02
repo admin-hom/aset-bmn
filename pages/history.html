@@ -1,0 +1,47 @@
+<div id="page-history" class="page active">
+    <div class="detail-header">
+        <button class="btn-icon" onclick="showPage('home')">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h2>Riwayat Verifikasi</h2>
+    </div>
+
+    <!-- Search -->
+    <div class="history-search">
+        <div class="input-group">
+            <div class="input-with-btn">
+                <input type="text" id="historySearch" placeholder="Cari nama barang, NUP, lokasi..." oninput="filterHistory()">
+                <button class="btn btn-primary btn-search" onclick="filterHistory()">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="history-filters">
+        <div class="filter-group">
+            <label>Kondisi:</label>
+            <select id="filterKondisi" onchange="filterHistory()">
+                <option value="">Semua</option>
+                <option value="Baik">Baik</option>
+                <option value="Rusak Ringan">Rusak Ringan</option>
+                <option value="Rusak Berat">Rusak Berat</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Urutkan:</label>
+            <select id="filterSort" onchange="filterHistory()">
+                <option value="newest">Terbaru</option>
+                <option value="oldest">Terlama</option>
+                <option value="name">Nama A-Z</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="history-summary" id="historySummary"></div>
+
+    <!-- History List -->
+    <div id="historyList" class="history-list"></div>
+</div>

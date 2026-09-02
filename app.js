@@ -20,13 +20,13 @@ const SATKER_MAP = {
 document.addEventListener('DOMContentLoaded', () => {
     initFirebase();
     loadData();
-    setupDragDrop();
-    setupFormListeners();
     loadDarkMode();
-    renderSyncIndicator();
     registerServiceWorker();
     setupInstallPrompt();
     hideSplashScreen();
+
+    // Start at satker selection page
+    Router.navigate('satker');
 });
 
 // ===== SPLASH SCREEN =====
@@ -179,7 +179,7 @@ function sendSyncNotification(assetName) {
         if (permission !== 'granted') return;
 
         try {
-            const notif = new Notification('Terverifikasi ✓', {
+            const notif = new Notification('Terverifikasi \u2713', {
                 body: `${assetName} berhasil diverifikasi & disync ke cloud`,
                 icon: 'icon-192.svg',
                 badge: 'icon-192.svg',
@@ -218,12 +218,8 @@ function saveData() {
 function selectSatker(satker) {
     currentSatker = satker;
     currentAssets = allAssets[satker] || [];
-    document.getElementById('headerSatkerName').textContent = SATKER_MAP[satker];
     unverifiedShowCount = 10;
     showPage('dashboard');
-    updateStats();
-    renderRecentList();
-    renderUnverifiedList();
     forceLoadFromFirestore(satker);
 }
 
@@ -233,38 +229,17 @@ function goBack() {
 
 // ===== NAVIGATION =====
 function showPage(page) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-
-    if (page === 'satker' || page === 'admin') {
-        document.getElementById(`screen-${page}`).classList.add('active');
-        if (page === 'admin') {
-            document.getElementById('screen-admin').classList.add('active');
-        } else {
-            document.getElementById('screen-satker').classList.add('active');
-        }
-    } else {
-        document.getElementById('screen-app').classList.add('active');
-        document.querySelectorAll('.pages-container .page').forEach(p => p.classList.remove('active'));
-        const targetPage = document.getElementById(`page-${page}`);
-        if (targetPage) targetPage.classList.add('active');
-
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        const navItem = document.querySelector(`.nav-item[data-page="${page}"]`);
-        if (navItem) navItem.classList.add('active');
-
-        if (page === 'history') filterHistory();
-        if (page === 'home') {
-            renderUnverifiedList();
-            clearSearchFields();
-        }
-    }
+    Router.navigate(page);
 }
 
 function clearSearchFields() {
-    document.getElementById('inputKodeBarang').value = '';
-    document.getElementById('inputNUP').value = '';
-    document.getElementById('inputSearchName').value = '';
+    const inputKB = document.getElementById('inputKodeBarang');
+    const inputNUP = document.getElementById('inputNUP');
+    const inputName = document.getElementById('inputSearchName');
     const results = document.getElementById('searchNameResults');
+    if (inputKB) inputKB.value = '';
+    if (inputNUP) inputNUP.value = '';
+    if (inputName) inputName.value = '';
     if (results) {
         results.classList.add('hidden');
         results.innerHTML = '';
@@ -337,11 +312,4 @@ function setupFormListeners() {
             }
         });
     }
-}
-
-// ===== SERVICE WORKER (duplicate registration guard) =====
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
-    });
 }

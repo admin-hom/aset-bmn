@@ -1,0 +1,77 @@
+<div id="page-settings" class="page active">
+    <div class="detail-header">
+        <button class="btn-icon" onclick="showPage('home')">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h2>Settings</h2>
+    </div>
+
+    <div class="admin-section" style="padding: 0;">
+        <div class="admin-card">
+            <h3><i class="fas fa-database"></i> Data Management</h3>
+            <button class="btn btn-danger btn-full" onclick="confirmClearData()">
+                <i class="fas fa-trash"></i> Hapus Semua Data Satker
+            </button>
+            <button class="btn btn-info btn-full" onclick="exportFullBackup()">
+                <i class="fas fa-download"></i> Backup JSON
+            </button>
+            <button class="btn btn-success btn-full" onclick="document.getElementById('restoreInput2').click()">
+                <i class="fas fa-upload"></i> Restore JSON
+            </button>
+            <input type="file" id="restoreInput2" accept=".json" class="hidden" onchange="restoreBackup(event)">
+        </div>
+
+        <div class="admin-card">
+            <h3><i class="fas fa-file-export"></i> Export</h3>
+            <button class="btn btn-success btn-full" onclick="exportExcel()">
+                <i class="fas fa-file-excel"></i> Export ke Excel
+            </button>
+            <button class="btn btn-primary btn-full" onclick="exportPDF()" style="margin-top: 8px;">
+                <i class="fas fa-file-pdf"></i> Export ke PDF (dengan Foto)
+            </button>
+        </div>
+
+        <div class="admin-card">
+            <h3><i class="fas fa-moon"></i> Tampilan</h3>
+            <div class="setting-row">
+                <div class="setting-info">
+                    <span class="setting-label">Dark Mode</span>
+                    <span class="setting-desc">Tampilan gelap untuk malam hari</span>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <h3><i class="fas fa-cloud"></i> Cloud Sync</h3>
+            <div id="firebaseStatus" class="firebase-status">
+                <p class="text-muted" style="font-size: 0.85rem;">Firebase belum dikonfigurasi.</p>
+                <p class="text-muted" style="font-size: 0.8rem; margin-top: 8px;">Untuk sync data antar device:</p>
+                <ol style="font-size: 0.8rem; color: var(--text-muted); margin: 8px 0 12px 16px; line-height: 1.8;">
+                    <li>Buka <a href="https://console.firebase.google.com" target="_blank" style="color: var(--primary);">Firebase Console</a></li>
+                    <li>Create Project → nama bebas</li>
+                    <li>Buka <strong>Realtime Database</strong> → Start in <strong>Test Mode</strong></li>
+                    <li>Buka <strong>Project Settings</strong> → copy config</li>
+                    <li>Edit file <code>firebase-config.js</code></li>
+                    <li>Set <code>CLOUD_SYNC_ENABLED = true</code></li>
+                </ol>
+                <button class="btn btn-primary btn-full" onclick="testFirebaseConnection()">
+                    <i class="fas fa-plug"></i> Test Koneksi Firebase
+                </button>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <h3><i class="fas fa-info-circle"></i> Tentang</h3>
+            <div class="about-info">
+                <p><strong>Verifikasi Aset BMN</strong></p>
+                <p class="text-muted">Versi 1.0</p>
+                <p class="text-muted">Kementerian Agama RI</p>
+                <p class="text-muted" style="margin-top: 12px; font-size: 0.8rem;">Aplikasi pencatatan dan verifikasi aset BMN untuk memudahkan proses pengawasan inventaris barang milik negara.</p>
+            </div>
+        </div>
+    </div>
+</div>

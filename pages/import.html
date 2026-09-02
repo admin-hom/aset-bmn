@@ -1,0 +1,50 @@
+<div id="page-import" class="page active">
+    <div class="detail-header">
+        <button class="btn-icon" onclick="showPage('home')">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h2>Import Data SIMAN</h2>
+    </div>
+
+    <div class="import-section">
+        <div class="import-info">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>Import dari SIMAN Kemenkeu</strong>
+                <p>Upload file Excel (.xlsx) export dari SIMAN. Pastikan kolom yang diperlukan tersedia.</p>
+            </div>
+        </div>
+
+        <div class="required-columns">
+            <h4>Kolom yang Diperlukan:</h4>
+            <div class="column-tags">
+                <span class="tag">Kode Barang</span>
+                <span class="tag">NUP</span>
+                <span class="tag">Nama Barang</span>
+                <span class="tag">Merk</span>
+                <span class="tag">Tipe</span>
+                <span class="tag">Kondisi</span>
+                <span class="tag">Nilai Buku</span>
+                <span class="tag">Status BMN</span>
+            </div>
+        </div>
+
+        <div class="import-dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>Ketik untuk memilih file Excel</p>
+            <span>atau drag & drop file ke sini</span>
+            <input type="file" id="fileInput" accept=".xlsx,.xls" class="hidden" onchange="handleFileImport(event)">
+        </div>
+
+        <div id="importProgress" class="import-progress hidden">
+            <div class="progress-bar">
+                <div class="progress-fill" id="importProgressFill"></div>
+            </div>
+            <p id="importStatus">Memproses...</p>
+        </div>
+
+        <button class="btn btn-primary btn-full" onclick="document.getElementById('fileInput').click()">
+            <i class="fas fa-file-excel"></i> Pilih File Excel
+        </button>
+    </div>
+</div>

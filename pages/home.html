@@ -1,0 +1,75 @@
+<div id="page-home" class="page active">
+    <div class="search-section">
+        <h2>Cari Aset</h2>
+        <p class="text-muted">Masukkan Kode Barang dan NUP untuk mencari aset</p>
+
+        <div class="input-group">
+            <label><i class="fas fa-barcode"></i> Kode Barang</label>
+            <input type="text" id="inputKodeBarang" placeholder="Contoh: 3050104001" inputmode="numeric">
+        </div>
+
+        <div class="input-group">
+            <label><i class="fas fa-hashtag"></i> NUP</label>
+            <div class="input-with-btn">
+                <input type="text" id="inputNUP" placeholder="Contoh: 6" inputmode="numeric">
+                <button class="btn btn-primary btn-search" onclick="searchAsset()">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+
+        <button class="btn btn-primary btn-full" onclick="searchAsset()">
+            <i class="fas fa-search"></i> Cari Aset
+        </button>
+    </div>
+
+    <!-- Search by Name -->
+    <div class="search-section">
+        <div class="input-group">
+            <label><i class="fas fa-tag"></i> Cari by Nama / Merk</label>
+            <input type="text" id="inputSearchName" placeholder="Ketik nama barang atau merk..." oninput="searchByName()" autocomplete="off">
+        </div>
+        <div id="searchNameResults" class="search-name-results hidden"></div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="quick-stats">
+        <div class="quick-stat">
+            <span class="stat-num" id="statTotal">0</span>
+            <span class="stat-label">Total</span>
+        </div>
+        <div class="quick-stat verified">
+            <span class="stat-num" id="statVerified">0</span>
+            <span class="stat-label">Terverifikasi</span>
+        </div>
+        <div class="quick-stat unverified">
+            <span class="stat-num" id="statUnverified">0</span>
+            <span class="stat-label">Belum</span>
+        </div>
+    </div>
+
+    <!-- Aset Belum Diverifikasi -->
+    <div class="recent-section">
+        <h3><i class="fas fa-exclamation-triangle"></i> Belum Diverifikasi <span id="unverifiedCount" class="unverified-badge"></span></h3>
+        <div id="unverifiedList" class="recent-list">
+            <div class="empty-state-small">
+                <i class="fas fa-check-circle"></i>
+                <p>Semua aset sudah terverifikasi!</p>
+            </div>
+        </div>
+        <button id="btnLoadMore" class="btn btn-outline-dark btn-full hidden" onclick="loadMoreUnverified()">
+            <i class="fas fa-arrow-down"></i> Tampilkan Lebih Banyak
+        </button>
+    </div>
+
+    <!-- Recent Verifications -->
+    <div class="recent-section">
+        <h3><i class="fas fa-clock"></i> Verifikasi Terakhir</h3>
+        <div id="recentList" class="recent-list">
+            <div class="empty-state-small">
+                <i class="fas fa-inbox"></i>
+                <p>Belum ada verifikasi</p>
+            </div>
+        </div>
+    </div>
+</div>
