@@ -173,7 +173,7 @@ function viewHistoryDetail(kodeBarang, nup) {
     );
     if (asset) {
         currentAsset = asset;
-        renderAssetDetail(asset);
+        pendingDetailAsset = asset;
         showPage('detail');
     } else {
         showToast('Aset tidak ditemukan di data', 'error');

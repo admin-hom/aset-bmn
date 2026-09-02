@@ -98,7 +98,10 @@ function init_verifikasi() {
 }
 
 function init_detail() {
-    // Detail page is initialized by renderAssetDetail() which is called before navigation
+    if (pendingDetailAsset) {
+        renderAssetDetail(pendingDetailAsset);
+        pendingDetailAsset = null;
+    }
 }
 
 function init_dashboard() {

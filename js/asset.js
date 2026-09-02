@@ -1,4 +1,6 @@
 // ===== SEARCH ASSET =====
+let pendingDetailAsset = null;
+
 function searchAsset() {
     const kodeBarang = document.getElementById('inputKodeBarang').value.trim();
     const nup = document.getElementById('inputNUP').value.trim();
@@ -18,7 +20,7 @@ function searchAsset() {
     }
 
     currentAsset = asset;
-    renderAssetDetail(asset);
+    pendingDetailAsset = asset;
     showPage('detail');
 }
 
