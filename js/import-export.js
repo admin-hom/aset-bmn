@@ -122,10 +122,11 @@ function processExcelFile(file) {
                 const cols = Object.keys(finalData[0]);
                 const satkerCol = cols.find(c => c.toLowerCase().includes('satker'));
                 if (satkerCol) {
+                    // Match by satker code OR name
                     const satkerPatterns = {
-                        sekretariat: ['sekretariat', 'sekjen', 'sekretariat jendral', 'sekretariat jenderal', 'setjen', 'setjendral'],
-                        pendidikan: ['pendidikan', 'pendis', 'pendidikan islam', 'pendedis'],
-                        bimas: ['bimas', 'bimbingan masyarakat', 'bimbingan masyarakat islam', 'bimas islam']
+                        sekretariat: ['025011100650126000', 'sekretariat', 'sekjen', 'setjen'],
+                        pendidikan: ['025041100650128000', 'pendidikan', 'pendis', 'pendedis'],
+                        bimas: ['025031100650127000', 'bimas', 'bimbingan masyarakat']
                     };
                     const patterns = satkerPatterns[currentSatker] || [currentSatker];
                     const beforeCount = finalData.length;
