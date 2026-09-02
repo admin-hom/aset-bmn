@@ -18,6 +18,9 @@
             <button class="btn btn-success btn-full" onclick="document.getElementById('restoreInput2').click()">
                 <i class="fas fa-upload"></i> Restore JSON
             </button>
+            <button class="btn btn-warning btn-full" onclick="clearAppCache()" style="margin-top: 8px;">
+                <i class="fas fa-broom"></i> Clear Cache & Reload
+            </button>
             <input type="file" id="restoreInput2" accept=".json" class="hidden" onchange="restoreBackup(event)">
         </div>
 

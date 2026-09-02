@@ -377,6 +377,8 @@ body {
 .btn-danger:hover { background: #dc2626; }
 .btn-info { background: var(--blue); color: #fff; }
 .btn-info:hover { background: #2563eb; }
+.btn-warning { background: #f59e0b; color: #fff; }
+.btn-warning:hover { background: #d97706; }
 .btn-outline { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,0.3); }
 .btn-outline:hover { background: rgba(255,255,255,0.1); }
 .btn-full { width: 100%; }

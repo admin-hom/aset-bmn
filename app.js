@@ -290,6 +290,47 @@ function toggleDarkMode() {
     localStorage.setItem('darkMode', isDark);
 }
 
+// ===== CLEAR CACHE =====
+function clearAppCache() {
+    document.getElementById('modalTitle').textContent = 'Clear Cache?';
+    document.getElementById('modalMessage').textContent = 'Cache app akan dihapus dan halaman akan di-reload. Data tetap aman.';
+    document.getElementById('modalConfirm').onclick = () => {
+        closeModal();
+        doClearCache();
+    };
+    document.getElementById('confirmModal').classList.add('show');
+}
+
+function doClearCache() {
+    showToast('Menghapus cache...', 'info');
+
+    // Clear all service worker caches
+    if ('caches' in window) {
+        caches.keys().then(names => {
+            return Promise.all(names.map(name => caches.delete(name)));
+        }).then(() => {
+            console.log('All caches cleared');
+            // Unregister service worker
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(regs => {
+                    return Promise.all(regs.map(reg => reg.unregister()));
+                }).then(() => {
+                    console.log('SW unregistered');
+                    // Hard reload
+                    window.location.reload(true);
+                });
+            } else {
+                window.location.reload(true);
+            }
+        }).catch(err => {
+            console.error('Cache clear error:', err);
+            window.location.reload(true);
+        });
+    } else {
+        window.location.reload(true);
+    }
+}
+
 // ===== HELPERS =====
 function escapeHtml(str) {
     if (!str) return '';
