@@ -39,7 +39,7 @@ const Router = {
                         <span id="headerSatkerName">${escapeHtml(satkerName)}</span>
                         <span id="syncIndicator" class="sync-indicator"></span>
                     </div>
-                    <button class="btn-icon" onclick="showPage('dashboard')">
+                    <button class="btn-icon" onclick="showPage('home')">
                         <i class="fas fa-chart-pie"></i>
                     </button>
                 </header>
@@ -52,9 +52,6 @@ const Router = {
                     </button>
                     <button class="nav-item ${page === 'import' ? 'active' : ''}" onclick="showPage('import')" data-page="import">
                         <i class="fas fa-file-import"></i><span>Import</span>
-                    </button>
-                    <button class="nav-item ${page === 'dashboard' ? 'active' : ''}" onclick="showPage('dashboard')" data-page="dashboard">
-                        <i class="fas fa-chart-pie"></i><span>Dashboard</span>
                     </button>
                     <button class="nav-item ${page === 'history' ? 'active' : ''}" onclick="showPage('history')" data-page="history">
                         <i class="fas fa-history"></i><span>Riwayat</span>
@@ -89,6 +86,7 @@ function init_home() {
     updateStats();
     renderUnverifiedList();
     renderRecentList();
+    renderKondisiStats();
 }
 
 function init_detail() {

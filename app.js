@@ -219,7 +219,7 @@ function selectSatker(satker) {
     currentSatker = satker;
     currentAssets = allAssets[satker] || [];
     unverifiedShowCount = 10;
-    showPage('dashboard');
+    showPage('home');
     forceLoadFromFirestore(satker);
 }
 
