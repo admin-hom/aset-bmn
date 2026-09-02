@@ -28,7 +28,10 @@ function deleteVerification() {
 
 // ===== SAVE VERIFICATION =====
 function saveVerification() {
-    if (!currentAsset) return;
+    if (!currentAsset) {
+        showToast('Error: data aset tidak ditemukan. Coba cari ulang.', 'error');
+        return;
+    }
 
     const lokasi = document.getElementById('inputLokasi').value.trim();
     const kondisi = document.querySelector('input[name="kondisi"]:checked')?.value;
