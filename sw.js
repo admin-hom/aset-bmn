@@ -1,34 +1,9 @@
 // ===== Service Worker for PWA =====
-const CACHE_NAME = 'aset-bmn-v5';
+const CACHE_NAME = 'aset-bmn-v6';
 const BASE = '/aset-bmn/';
-const ASSETS = [
-    BASE,
-    BASE + 'index.html',
-    BASE + 'style.css',
-    BASE + 'app.js',
-    BASE + 'manifest.json',
-    BASE + 'icon-192.png',
-    BASE + 'icon-512.png',
-    BASE + 'icon-192.svg',
-    BASE + 'icon-512.svg',
-    BASE + 'firebase-config.js',
-    // JS modules
-    BASE + 'js/shared.js',
-    BASE + 'js/firebase-sync.js',
-    BASE + 'js/asset.js',
-    BASE + 'js/verification.js',
-    BASE + 'js/photo.js',
-    BASE + 'js/import-export.js',
-    // Page templates
-    BASE + 'pages/satker.html',
-    BASE + 'pages/home.html',
-    BASE + 'pages/detail.html',
-    BASE + 'pages/dashboard.html',
-    BASE + 'pages/import.html',
-    BASE + 'pages/settings.html',
-    BASE + 'pages/history.html',
-    BASE + 'pages/admin.html',
-    // External CDN
+
+// CDN resources (versioned, safe to cache-first)
+const CDN_URLS = [
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
     'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
@@ -36,20 +11,15 @@ const ASSETS = [
     'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js'
 ];
 
-// Install - cache all assets
+// Install - cache CDN only (app files fetched on-demand)
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(ASSETS).catch(err => {
-                console.warn('SW cache addAll partial fail:', err);
-                // Cache what we can, don't block install
-                return Promise.allSettled(
-                    ASSETS.map(url => cache.add(url).catch(() => null))
-                );
-            });
+            return Promise.allSettled(
+                CDN_URLS.map(url => cache.add(url).catch(() => null))
+            );
         })
     );
-    // Activate immediately without waiting for old SW
     self.skipWaiting();
 });
 
@@ -73,20 +43,23 @@ self.addEventListener('activate', (event) => {
                 })
             );
         }).then(() => {
-            // Take control of all pages immediately
             return self.clients.claim();
         })
     );
 });
 
-// Fetch - Network first for Firebase, Cache first for local
+// Fetch strategy:
+// - Firebase/Google APIs: network first
+// - CDN (font-awesome, xlsx, jspdf): cache first (versioned, won't change)
+// - App files (HTML, JS, CSS, pages): NETWORK FIRST (always get latest)
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // Network first for Firebase/Firestore requests
+    // Skip non-GET requests
+    if (event.request.method !== 'GET') return;
+
+    // Network first for Firebase/Firestore
     if (url.hostname.includes('firebaseio.com') ||
-        url.hostname.includes('googleapis.com') ||
-        url.hostname.includes('gstatic.com') ||
         url.hostname.includes('firestore.googleapis.com')) {
         event.respondWith(
             fetch(event.request).catch(() => caches.match(event.request))
@@ -94,26 +67,38 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Cache first for local assets
-    event.respondWith(
-        caches.match(event.request).then((response) => {
-            if (response) return response;
+    // Cache first for CDN (versioned, safe)
+    if (CDN_URLS.some(cdn => event.request.url.startsWith(cdn.split('?')[0]))) {
+        event.respondWith(
+            caches.match(event.request).then((response) => {
+                return response || fetch(event.request);
+            })
+        );
+        return;
+    }
 
-            return fetch(event.request).then((fetchResponse) => {
-                // Only cache successful same-origin responses
-                if (fetchResponse.status === 200 && url.origin === self.location.origin) {
-                    const responseClone = fetchResponse.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, responseClone);
-                    });
-                }
-                return fetchResponse;
-            });
-        }).catch(() => {
-            // Fallback for navigation requests
-            if (event.request.mode === 'navigate') {
-                return caches.match(BASE + 'index.html');
+    // NETWORK FIRST for all app files (HTML, JS, CSS, pages, images)
+    // This ensures users always get the latest version
+    event.respondWith(
+        fetch(event.request).then((fetchResponse) => {
+            // Cache the new version for offline use
+            if (fetchResponse.status === 200 && url.origin === self.location.origin) {
+                const responseClone = fetchResponse.clone();
+                caches.open(CACHE_NAME).then((cache) => {
+                    cache.put(event.request, responseClone);
+                });
             }
+            return fetchResponse;
+        }).catch(() => {
+            // Offline fallback: serve from cache
+            return caches.match(event.request).then((response) => {
+                if (response) return response;
+                // For navigation requests, serve index.html
+                if (event.request.mode === 'navigate') {
+                    return caches.match(BASE + 'index.html');
+                }
+                return new Response('Offline', { status: 503 });
+            });
         })
     );
 });
