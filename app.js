@@ -282,7 +282,7 @@ function showSuccessModal(message) {
 
 function closeSuccessModal() {
     document.getElementById('successModal').classList.remove('show');
-    showPage('home');
+    showPage('verifikasi');
 }
 
 // ===== TOAST =====
