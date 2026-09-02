@@ -117,33 +117,37 @@ function processExcelFile(file) {
             }
 
             // ===== SATKER FILTER: auto-filter if Excel has a satker column =====
+            let satkerFiltered = false;
             if (finalData.length > 0 && currentSatker) {
                 const cols = Object.keys(finalData[0]);
                 const satkerCol = cols.find(c => c.toLowerCase().includes('satker'));
                 if (satkerCol) {
                     const satkerPatterns = {
-                        sekretariat: ['sekretariat', 'sekjen', 'sekretariat jendral', 'sekretariat jenderal'],
-                        pendidikan: ['pendidikan', 'pendis', 'pendidikan islam'],
-                        bimas: ['bimas', 'bimbingan masyarakat', 'bimbingan masyarakat islam']
+                        sekretariat: ['sekretariat', 'sekjen', 'sekretariat jendral', 'sekretariat jenderal', 'setjen', 'setjendral'],
+                        pendidikan: ['pendidikan', 'pendis', 'pendidikan islam', 'pendedis'],
+                        bimas: ['bimas', 'bimbingan masyarakat', 'bimbingan masyarakat islam', 'bimas islam']
                     };
                     const patterns = satkerPatterns[currentSatker] || [currentSatker];
                     const beforeCount = finalData.length;
-                    finalData = finalData.filter(row => {
+                    const filtered = finalData.filter(row => {
                         const val = String(row[satkerCol] || '').trim().toLowerCase();
                         return patterns.some(p => val.includes(p));
                     });
-                    console.log(`Satker filter (${satkerCol}): ${beforeCount} → ${finalData.length} rows for '${currentSatker}'`);
+                    console.log(`Satker filter (${satkerCol}): ${beforeCount} → ${filtered.length} rows for '${currentSatker}'`);
+                    // Only apply filter if it keeps some data
+                    if (filtered.length > 0) {
+                        finalData = filtered;
+                        satkerFiltered = true;
+                    } else {
+                        console.log(`Satker filter matched 0 rows — importing all data (unfiltered)`);
+                        showToast(`Kolom Satker ditemukan tapi tidak cocok. Import semua data.`, 'info');
+                    }
                 }
             }
 
-            if (finalData.length === 0) {
-                showImportProgress(false);
-                showToast(`Tidak ada data untuk satker ${SATKER_MAP[currentSatker] || currentSatker} di file ini.`, 'error');
-                return;
-            }
-
             console.log(`Final: ${finalData.length} rows from sheet '${usedSheet}'`);
-            showImportProgress(true, `Memproses ${finalData.length} data...`);
+            const filterMsg = satkerFiltered ? ` (filtered: ${SATKER_MAP[currentSatker]})` : '';
+            showImportProgress(true, `Memproses ${finalData.length} data${filterMsg}...`);
 
             let imported = 0;
             const newAssets = [];
