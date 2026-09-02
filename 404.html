@@ -2,10 +2,34 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=index.html">
-    <title>Verifikasi Aset BMN</title>
+    <meta http-equiv="refresh" content="0">
+    <title>Redirecting...</title>
+    <script>
+        // GitHub Pages SPA trick:
+        // /aset-bmn/sekjen → 404.html → redirect to /aset-bmn/#/sekjen
+        // Then index.html reads the hash and auto-selects the satker.
+
+        // Extract the path after the base URL
+        var repo = '/aset-bmn';
+        var path = window.location.pathname;
+
+        // Remove the repo prefix if present
+        if (path.startsWith(repo)) {
+            path = path.substring(repo.length);
+        }
+
+        // Remove leading/trailing slashes
+        path = path.replace(/^\/+|\/+$/g, '');
+
+        // Redirect to index.html with hash
+        if (path) {
+            window.location.replace(repo + '/#/' + path);
+        } else {
+            window.location.replace(repo + '/');
+        }
+    </script>
 </head>
 <body>
-    <script>window.location.href = 'index.html';</script>
+    <p>Redirecting...</p>
 </body>
 </html>

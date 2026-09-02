@@ -25,9 +25,30 @@ document.addEventListener('DOMContentLoaded', () => {
     setupInstallPrompt();
     hideSplashScreen();
 
-    // Start at satker selection page
-    Router.navigate('satker');
+    // Start at satker selection page (or auto-select from URL hash)
+    const hashSatker = getSatkerFromHash();
+    if (hashSatker && SATKER_MAP[hashSatker]) {
+        selectSatker(hashSatker);
+    } else {
+        Router.navigate('satker');
+    }
 });
+
+// ===== HASH ROUTING =====
+// Supports direct URLs like /aset-bmn/#/sekjen
+function getSatkerFromHash() {
+    const hash = window.location.hash.replace(/^#\//, '').replace(/^#/, '');
+    if (!hash) return null;
+    // Map URL shortcuts to satker keys
+    const urlMap = {
+        'sekjen': 'sekretariat',
+        'sekretariat': 'sekretariat',
+        'pendis': 'pendidikan',
+        'pendidikan': 'pendidikan',
+        'bimas': 'bimas'
+    };
+    return urlMap[hash.toLowerCase()] || null;
+}
 
 // ===== SPLASH SCREEN =====
 function hideSplashScreen() {
@@ -219,6 +240,9 @@ function selectSatker(satker) {
     currentSatker = satker;
     currentAssets = allAssets[satker] || [];
     unverifiedShowCount = 10;
+    // Update URL hash so the link reflects current satker
+    const reverseMap = { sekretariat: 'sekjen', pendidikan: 'pendis', bimas: 'bimas' };
+    history.replaceState(null, '', '#' + (reverseMap[satker] || satker));
     showPage('home');
     forceLoadFromFirestore(satker);
 }
