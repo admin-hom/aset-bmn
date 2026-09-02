@@ -24,7 +24,7 @@ const Router = {
         const app = document.getElementById('app');
         if (!app) return;
 
-        const APP_PAGES = ['home', 'detail', 'dashboard', 'import', 'settings', 'history'];
+        const APP_PAGES = ['home', 'verifikasi', 'detail', 'dashboard', 'import', 'settings', 'history'];
         const template = await this.loadTemplate(page);
 
         if (APP_PAGES.includes(page)) {
@@ -49,6 +49,9 @@ const Router = {
                 <nav class="bottom-nav">
                     <button class="nav-item ${page === 'home' ? 'active' : ''}" onclick="showPage('home')" data-page="home">
                         <i class="fas fa-home"></i><span>Beranda</span>
+                    </button>
+                    <button class="nav-item ${page === 'verifikasi' ? 'active' : ''}" onclick="showPage('verifikasi')" data-page="verifikasi">
+                        <i class="fas fa-clipboard-check"></i><span>Verifikasi</span>
                     </button>
                     <button class="nav-item ${page === 'import' ? 'active' : ''}" onclick="showPage('import')" data-page="import">
                         <i class="fas fa-file-import"></i><span>Import</span>
@@ -81,12 +84,17 @@ const Router = {
 // Called after a page template is injected into the DOM.
 
 function init_home() {
-    setupFormListeners();
-    clearSearchFields();
     updateStats();
     renderUnverifiedList();
     renderRecentList();
     renderKondisiStats();
+}
+
+function init_verifikasi() {
+    setupFormListeners();
+    clearSearchFields();
+    renderUnverifiedList();
+    renderRecentList();
 }
 
 function init_detail() {
