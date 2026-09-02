@@ -28,53 +28,58 @@ function deleteVerification() {
 
 // ===== SAVE VERIFICATION =====
 function saveVerification() {
-    if (!currentAsset) {
-        showToast('Error: data aset tidak ditemukan. Coba cari ulang.', 'error');
-        return;
+    try {
+        if (!currentAsset) {
+            showToast('Error: data aset tidak ditemukan. Coba cari ulang.', 'error');
+            return;
+        }
+
+        const lokasi = document.getElementById('inputLokasi').value.trim();
+        const kondisi = document.querySelector('input[name="kondisi"]:checked')?.value;
+        const catatan = document.getElementById('inputCatatan').value.trim();
+
+        if (!lokasi) {
+            showToast('Masukkan lokasi ruangan!', 'error');
+            return;
+        }
+
+        if (!kondisi) {
+            showToast('Pilih kondisi aset!', 'error');
+            return;
+        }
+
+        const verification = {
+            id: Date.now(),
+            kodeBarang: currentAsset.kodeBarang,
+            nup: currentAsset.nup,
+            namaBarang: currentAsset.namaBarang,
+            merk: currentAsset.merk,
+            tipe: currentAsset.tipe,
+            kondisiSiman: currentAsset.kondisi,
+            kondisiAktual: kondisi,
+            lokasi: lokasi,
+            foto: currentPhoto,
+            catatan: catatan,
+            tanggalVerifikasi: new Date().toISOString(),
+            satker: currentSatker
+        };
+
+        verifications[currentSatker] = (verifications[currentSatker] || []).filter(v =>
+            !(v.kodeBarang === currentAsset.kodeBarang && v.nup === currentAsset.nup)
+        );
+
+        verifications[currentSatker].unshift(verification);
+
+        saveData();
+        updateStats();
+        renderRecentList();
+
+        showSuccessModal('Verifikasi berhasil disimpan!');
+        sendSyncNotification(currentAsset.namaBarang || currentAsset.kodeBarang);
+    } catch (err) {
+        console.error('saveVerification error:', err);
+        showToast('Error: ' + err.message, 'error');
     }
-
-    const lokasi = document.getElementById('inputLokasi').value.trim();
-    const kondisi = document.querySelector('input[name="kondisi"]:checked')?.value;
-    const catatan = document.getElementById('inputCatatan').value.trim();
-
-    if (!lokasi) {
-        showToast('Masukkan lokasi ruangan!', 'error');
-        return;
-    }
-
-    if (!kondisi) {
-        showToast('Pilih kondisi aset!', 'error');
-        return;
-    }
-
-    const verification = {
-        id: Date.now(),
-        kodeBarang: currentAsset.kodeBarang,
-        nup: currentAsset.nup,
-        namaBarang: currentAsset.namaBarang,
-        merk: currentAsset.merk,
-        tipe: currentAsset.tipe,
-        kondisiSiman: currentAsset.kondisi,
-        kondisiAktual: kondisi,
-        lokasi: lokasi,
-        foto: currentPhoto,
-        catatan: catatan,
-        tanggalVerifikasi: new Date().toISOString(),
-        satker: currentSatker
-    };
-
-    verifications[currentSatker] = (verifications[currentSatker] || []).filter(v =>
-        !(v.kodeBarang === currentAsset.kodeBarang && v.nup === currentAsset.nup)
-    );
-
-    verifications[currentSatker].unshift(verification);
-
-    saveData();
-    updateStats();
-    renderRecentList();
-
-    showSuccessModal('Verifikasi berhasil disimpan!');
-    sendSyncNotification(currentAsset.namaBarang || currentAsset.kodeBarang);
 }
 
 // ===== HISTORY PAGE =====
