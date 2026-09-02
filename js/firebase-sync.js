@@ -113,10 +113,7 @@ function pushToFirebase(satker) {
     // Snapshot data at call time — immune to global state changes during async
     const pushSatker = satker;
     const satkerAssets = allAssets[pushSatker] || [];
-    const satkerVerifs = (verifications[pushSatker] || []).map(v => {
-        const { foto, ...rest } = v;
-        return rest;
-    });
+    const satkerVerifs = verifications[pushSatker] || [];
     console.log('Pushing:', pushSatker, satkerAssets.length, 'assets,', satkerVerifs.length, 'verifications');
     const chunks = chunkArray(satkerAssets, CHUNK_SIZE);
 
