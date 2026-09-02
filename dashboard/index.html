@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1e293b">
+    <title>Dashboard Aset BMN</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-logo">
+                <i class="fas fa-chart-pie"></i>
+            </div>
+            <div>
+                <h1>Dashboard Aset BMN</h1>
+                <p class="header-sub">Kementerian Agama RI</p>
+            </div>
+            <div id="syncStatus" class="sync-badge">
+                <i class="fas fa-sync fa-spin"></i> Loading...
+            </div>
+        </div>
+    </header>
+
+    <!-- Satker Selector -->
+    <div class="container">
+        <div class="satker-tabs" id="satkerTabs">
+            <button class="tab active" onclick="selectSatker('sekretariat')" data-satker="sekretariat">
+                <i class="fas fa-landmark"></i> Sekjen
+            </button>
+            <button class="tab" onclick="selectSatker('pendidikan')" data-satker="pendidikan">
+                <i class="fas fa-graduation-cap"></i> Pendis
+            </button>
+            <button class="tab" onclick="selectSatker('bimas')" data-satker="bimas">
+                <i class="fas fa-mosque"></i> Bimas
+            </button>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" class="loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Memuat data dari Firestore...</p>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboard" class="dashboard hidden">
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card blue">
+                    <i class="fas fa-boxes-stacked"></i>
+                    <div class="stat-info">
+                        <span class="stat-num" id="totalAssets">0</span>
+                        <span class="stat-label">Total Aset</span>
+                    </div>
+                </div>
+                <div class="stat-card green">
+                    <i class="fas fa-check-circle"></i>
+                    <div class="stat-info">
+                        <span class="stat-num" id="verifiedAssets">0</span>
+                        <span class="stat-label">Terverifikasi</span>
+                    </div>
+                </div>
+                <div class="stat-card orange">
+                    <i class="fas fa-clock"></i>
+                    <div class="stat-info">
+                        <span class="stat-num" id="unverifiedAssets">0</span>
+                        <span class="stat-label">Belum Diverifikasi</span>
+                    </div>
+                </div>
+                <div class="stat-card red">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div class="stat-info">
+                        <span class="stat-num" id="problemAssets">0</span>
+                        <span class="stat-label">Rusak/Bermasalah</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="card">
+                <h3><i class="fas fa-chart-line"></i> Progress Verifikasi</h3>
+                <div class="progress-section">
+                    <div class="progress-header">
+                        <span id="progressText">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kondisi Breakdown -->
+            <div class="card">
+                <h3><i class="fas fa-heartbeat"></i> Berdasarkan Kondisi</h3>
+                <div id="kondisiStats" class="kondisi-stats"></div>
+            </div>
+
+            <!-- Top Unverified -->
+            <div class="card">
+                <h3><i class="fas fa-exclamation-circle"></i> Belum Diverifikasi</h3>
+                <div id="unverifiedList" class="asset-list"></div>
+            </div>
+
+            <!-- Recent Verifications -->
+            <div class="card">
+                <h3><i class="fas fa-clock"></i> Verifikasi Terakhir</h3>
+                <div id="recentList" class="asset-list"></div>
+            </div>
+
+            <!-- Export -->
+            <div class="card">
+                <h3><i class="fas fa-download"></i> Export</h3>
+                <button class="btn btn-success" onclick="exportExcel()">
+                    <i class="fas fa-file-excel"></i> Export Excel
+                </button>
+                <button class="btn btn-primary" onclick="exportPDF()">
+                    <i class="fas fa-file-pdf"></i> Export PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
