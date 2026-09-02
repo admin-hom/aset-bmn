@@ -206,9 +206,16 @@ function loadMoreUnverified() {
 }
 
 function goVerifyAsset(kodeBarang, nup) {
-    document.getElementById('inputKodeBarang').value = kodeBarang;
-    document.getElementById('inputNUP').value = nup;
-    searchAsset();
+    const asset = currentAssets.find(a =>
+        a.kodeBarang === kodeBarang && a.nup === nup
+    );
+    if (!asset) {
+        showToast('Aset tidak ditemukan!', 'error');
+        return;
+    }
+    currentAsset = asset;
+    pendingDetailAsset = asset;
+    showPage('detail');
 }
 
 // ===== RECENT LIST =====

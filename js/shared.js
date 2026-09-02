@@ -84,6 +84,10 @@ const Router = {
 // Called after a page template is injected into the DOM.
 
 function init_home() {
+    // Refresh currentAssets from allAssets
+    if (currentSatker && allAssets[currentSatker]) {
+        currentAssets = allAssets[currentSatker];
+    }
     updateStats();
     renderUnverifiedList();
     renderRecentList();
@@ -91,6 +95,10 @@ function init_home() {
 }
 
 function init_verifikasi() {
+    // Refresh currentAssets from allAssets (in case data loaded from Firestore)
+    if (currentSatker && allAssets[currentSatker]) {
+        currentAssets = allAssets[currentSatker];
+    }
     setupFormListeners();
     clearSearchFields();
     renderUnverifiedList();
